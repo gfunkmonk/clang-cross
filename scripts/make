@@ -4,6 +4,8 @@ set -e
 
 CT_URL="https://github.com/cross-tools"
 CT_VER=20250929
+GF_URL="https://github.com/gfunkmonk"
+GF_VER=ladder
 LLVM_TARGETS="AArch64;ARM;LoongArch;Mips;PowerPC;RISCV;SystemZ;X86"
 LLVM_EXPERIMENTAL_TARGETS_TO_BUILD="M68k"
 
@@ -60,7 +62,7 @@ build_target() {
 			URL="${CT_URL}/gnu-cross/releases/download/${CT_VER}/${TARGET}.tar.xz"
 			;;
 		*musl*)
-			URL="${CT_URL}/musl-cross/releases/download/${CT_VER}/${TARGET}.tar.xz"
+			URL="${GF_URL}/musl-cross/releases/download/${GF_VER}/${TARGET}.tar.xz"
 			;;
 	esac
 	for n in {0..9}; do
