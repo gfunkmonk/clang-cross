@@ -11,6 +11,7 @@ install_packages() {
 	sudo apt-get install -y --no-install-recommends \
 		build-essential \
 		ca-certificates \
+		ccache \
 		cmake \
 		git \
 		libz-dev \
@@ -26,6 +27,8 @@ build_llvm() {
 	mkdir -p build-llvm
 	pushd build-llvm
 	cmake -G Ninja -S ../llvm/llvm \
+		-DCMAKE_C_COMPILER_LAUNCHER=ccache \
+		-DCMAKE_CXX_COMPILER_LAUNCHER=ccache \
 		-DLLVM_ENABLE_PROJECTS="clang;lld" \
 		-DCMAKE_BUILD_TYPE=Release \
 		-DCMAKE_INSTALL_PREFIX=/opt/clang-cross \
