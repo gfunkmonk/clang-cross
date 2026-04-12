@@ -35,10 +35,18 @@ jobs:
           CCACHE_NOHASHDIR=true
           CCACHE_COMPRESS=true
           CCACHE_COMPRESSLEVEL=6
+          CCACHE_NOFILECLONE=true
+          CCACHE_NOHARDLINK=true
+          CCACHE_INODECACHE=true
           CCACHE_NLEVELS=4
           CCACHE_COMPILERCHECK=content
           CCACHE_DEPEND=true
           EOF
+
+          # Setup CCACHE Dir
+          sudo mkdir -p /mnt/ccache
+          sudo chown -R $USER:$USER /mnt/ccache
+          echo "CCACHE_DIR=/mnt/ccache" >> $GITHUB_ENV
           echo "CCACHE Environment set!"
 
       - name: 🏎 🅴🅽🅰🅱🅻🅴 🅲🅲🅰🅲🅷🅴 🏁
