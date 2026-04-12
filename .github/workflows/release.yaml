@@ -35,23 +35,10 @@ jobs:
           CCACHE_NOHASHDIR=true
           CCACHE_COMPRESS=true
           CCACHE_COMPRESSLEVEL=6
-          CCACHE_NOFILECLONE=true
-          CCACHE_NOHARDLINK=true
-          CCACHE_INODECACHE=true
           CCACHE_NLEVELS=4
           CCACHE_COMPILERCHECK=content
           CCACHE_DEPEND=true
           EOF
-
-          # Setup CCACHE Dir
-          sudo mkdir -p /mnt/ccache
-          sudo chown -R $USER:$USER /mnt/ccache
-          echo "CCACHE_DIR=/mnt/ccache" >> $GITHUB_ENV
-          echo "CCACHE Dir Set!"
-          # Setup tarballs dir for download caching
-          sudo mkdir -p /mnt/tarballs
-          sudo chown -R $USER:$USER /mnt/tarballs
-          df -h
           echo "CCACHE Environment set!"
 
       - name: 🏎 🅴🅽🅰🅱🅻🅴 🅲🅲🅰🅲🅷🅴 🏁
@@ -129,19 +116,26 @@ jobs:
           fetch-depth: 1
           submodules: true
 
+      - name: Get LLVM hash
+        id: llvm-hash
+        run: echo "hash=$(git rev-parse HEAD:llvm)" >> $GITHUB_OUTPUT
+
       - name: Download
         uses: actions/download-artifact@v4
         with:
           name: clang-cross.tar.xz
 
-      - name: Cache musl-cross tarball
+      - name: Cache target tarball
+        id: cache-target
         uses: actions/cache@v4
         with:
-          path: ${{ matrix.target }}.tar.xz
-          key: musl-cross-${{ matrix.target }}
+          path: |
+            ${{ matrix.target }}.tar.xz
+            ${{ matrix.target }}.tar.xz.sha256
+          key: target-${{ matrix.target }}-${{ steps.llvm-hash.outputs.hash }}
 
-      # Fixed indentation here
       - name: Build
+        if: steps.cache-target.outputs.cache-hit != 'true'
         run: |
           sudo rm -rf /opt/clang-cross
           ./scripts/make ${{ matrix.target }}
