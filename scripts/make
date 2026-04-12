@@ -43,6 +43,7 @@ build_llvm() {
 		-DLLVM_ENABLE_ZLIB=ON \
 		-DLLVM_LINK_LLVM_DYLIB=ON \
 		-DLLVM_TARGETS_TO_BUILD="${LLVM_TARGETS}" \
+                    -DLLVM_EXPERIMENTAL_TARGETS_TO_BUILD="${LLVM_EXPERIMENTAL_TARGETS_TO_BUILD}" \
 		-DLLVM_INSTALL_TOOLCHAIN_ONLY=ON
 	ninja install/strip
 	popd
@@ -100,6 +101,24 @@ build_target() {
 		EOF
 		chmod +x /opt/clang-cross/bin/${TARGET}-${n%%:*}
 	done
+          # For targets with no LLVM backend, install GCC binaries instead of clang wrappers
+          case ${TARGET} in
+              sh4-*)
+                  for n in gcc g++ cpp ar nm objcopy objdump ranlib strip; do
+                      bin="${TARGET}/bin/${TARGET}-${n}"
+                      if [[ -f "$bin" ]]; then
+                          cp "$bin" /opt/clang-cross/bin/
+                          chmod +x /opt/clang-cross/bin/${TARGET}-${n}
+                      fi
+                  done
+                  # Overwrite the cc/c++ symlinks clang loop just created
+                  ln -sf ${TARGET}-gcc  /opt/clang-cross/bin/${TARGET}-cc
+                  ln -sf ${TARGET}-g++  /opt/clang-cross/bin/${TARGET}-c++
+                  # Remove the non-functional clang wrappers
+                  rm -f /opt/clang-cross/bin/${TARGET}-clang
+                  rm -f /opt/clang-cross/bin/${TARGET}-clang++
+                  ;;
+          esac
 	find /opt/clang-cross -exec chmod -w {} \;
 	rm -rf ${TARGET}
 	sudo mv /opt/clang-cross ${TARGET}
