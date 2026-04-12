@@ -19,7 +19,7 @@ GF_VER=ladder
 #LLVM_TARGETS="AArch64;ARM;LoongArch;Mips;PowerPC;RISCV;SystemZ;X86;DirectX;SPIRV"
 #LLVM_EXPERIMENTAL_TARGETS_TO_BUILD="M68k;SH4;OR1K"
 
-LLVM_TARGETS="AArch64;ARM;LoongArch;Mips;PowerPC;RISCV;SystemZ;X86;Lanai;Sparc"
+LLVM_TARGETS="AArch64;ARM;LoongArch;Mips;PowerPC;RISCV;SystemZ;X86;Lanai;Sparc;M68k"
 LLVM_EXPERIMENTAL_TARGETS_TO_BUILD="M68k"
 
 install_packages() {

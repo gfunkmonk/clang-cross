@@ -142,38 +142,38 @@ jobs:
       fail-fast: false
       matrix:
         target:
-          - aarch64-unknown-linux-musl
-          - arm-unknown-linux-musleabi
-          - arm-unknown-linux-musleabihf
-          - armv5-unknown-linux-musleabi
-          - armv6-unknown-linux-musleabi
-          - armv6-unknown-linux-musleabihf
-          - armv7-unknown-linux-musleabi
-          - armv7-unknown-linux-musleabihf
-          - i386-unknown-linux-musl
-          - i486-unknown-linux-musl
-          - i586-unknown-linux-musl
-          - i686-unknown-linux-musl
-          - loongarch64-unknown-linux-musl
-          - mips64el-unknown-linux-musl
-          - mips64-unknown-linux-musl
-          - mipsel-unknown-linux-musl
-          - mipsel-unknown-linux-muslsf
-          - mips-unknown-linux-musl
-          - mips-unknown-linux-muslsf
+          #- aarch64-unknown-linux-musl
+          #- arm-unknown-linux-musleabi
+          #- arm-unknown-linux-musleabihf
+          #- armv5-unknown-linux-musleabi
+          #- armv6-unknown-linux-musleabi
+          #- armv6-unknown-linux-musleabihf
+          #- armv7-unknown-linux-musleabi
+          #- armv7-unknown-linux-musleabihf
+          #- i386-unknown-linux-musl
+          #- i486-unknown-linux-musl
+          #- i586-unknown-linux-musl
+          #- i686-unknown-linux-musl
+          #- loongarch64-unknown-linux-musl
+          #- mips64el-unknown-linux-musl
+          #- mips64-unknown-linux-musl
+          #- mipsel-unknown-linux-musl
+          #- mipsel-unknown-linux-muslsf
+          #- mips-unknown-linux-musl
+          #- mips-unknown-linux-muslsf
           - m68k-unknown-linux-musl
           - or1k-unknown-linux-musl
-          - powerpc64le-unknown-linux-musl
-          - powerpc64-unknown-linux-musl
-          - powerpcle-unknown-linux-musl
-          - powerpcle-unknown-linux-muslsf
-          - powerpc-unknown-linux-musl
-          - powerpc-unknown-linux-muslsf
-          - riscv32-unknown-linux-musl
-          - riscv64-unknown-linux-musl
-          - s390x-ibm-linux-musl
+          #- powerpc64le-unknown-linux-musl
+          #- powerpc64-unknown-linux-musl
+          #- powerpcle-unknown-linux-musl
+          #- powerpcle-unknown-linux-muslsf
+          #- powerpc-unknown-linux-musl
+          #- powerpc-unknown-linux-muslsf
+          #- riscv32-unknown-linux-musl
+          #- riscv64-unknown-linux-musl
+          #- s390x-ibm-linux-musl
           - sh4-multilib-linux-musl
-          - x86_64-unknown-linux-musl
+          #- x86_64-unknown-linux-musl
     steps:
       - name: Checkout
         uses: actions/checkout@v6
