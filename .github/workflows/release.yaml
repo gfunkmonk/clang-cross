@@ -26,6 +26,7 @@ jobs:
           path: clang-cross.tar.xz
           key: clang-cross-${{ steps.llvm-hash.outputs.hash }}
       - name: 🅲🅲🅰🅲🅷🅴 🅴🅽🆅🅸🆁🅾🅽🅼🅴🅽🆃 🆅🅰🆁🅸🅰🅱🅻🅴🆂
+        if: steps.cache-llvm.outputs.cache-hit != 'true'
         run: |
           DEBIAN_FRONTEND=noninteractive sudo apt-get -y update
           DEBIAN_FRONTEND=noninteractive sudo apt-get -y install apt-utils
