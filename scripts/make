@@ -169,7 +169,7 @@ EOF
         		;;
 	esac
 
-	sudo find /opt/clang-cross ! -type l -exec chmod -w {} +
+	sudo find /opt/clang-cross ! -type l -exec chmod -w {} + || true
 	rm -rf "${TARGET}"
 	sudo mv /opt/clang-cross "${TARGET}"
 	sudo chown -R root:root "${TARGET}"
