@@ -9,10 +9,10 @@ on:
 jobs:
   build-llvm:
     name: Build LLVM
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           fetch-depth: 1
           submodules: true
@@ -21,7 +21,7 @@ jobs:
         run: echo "hash=$(git rev-parse HEAD:llvm)" >> $GITHUB_OUTPUT
       - name: Restore LLVM build cache
         id: cache-llvm
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: clang-cross.tar.xz
           key: clang-cross-${{ steps.llvm-hash.outputs.hash }}
@@ -75,7 +75,7 @@ jobs:
           ./scripts/make llvm
 
       - name: Upload package
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: clang-cross.tar.xz
           path: clang-cross.tar.xz
@@ -84,7 +84,7 @@ jobs:
 
   build-targets:
     name: Build Targets
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     needs:
       - build-llvm
     strategy:
@@ -125,7 +125,7 @@ jobs:
           - x86_64-unknown-linux-musl
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           fetch-depth: 1
           submodules: true
@@ -155,7 +155,7 @@ jobs:
           ./scripts/make ${{ matrix.target }}
 
       - name: Upload package
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: ${{ matrix.target }}.tar.xz
           path: ${{ matrix.target }}.tar.xz
@@ -163,7 +163,7 @@ jobs:
           retention-days: 1
 
       - name: Upload checksum
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: ${{ matrix.target }}.tar.xz.sha256
           path: ${{ matrix.target }}.tar.xz.sha256
@@ -172,18 +172,18 @@ jobs:
 
   release:
     name: Release
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     needs:
       - build-targets
     if: github.event_name == 'release'
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           fetch-depth: 1
 
       - name: Download artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           path: release
           pattern: "*-*-*.tar.*"
