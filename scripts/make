@@ -103,7 +103,7 @@ build_target() {
 	done
           # For targets with no LLVM backend, install GCC binaries instead of clang wrappers
           case ${TARGET} in
-              sh4-*)
+              sh4-*|or1k-*)
                   for n in gcc g++ cpp ar nm objcopy objdump ranlib strip; do
                       bin="${TARGET}/bin/${TARGET}-${n}"
                       if [[ -f "$bin" ]]; then
