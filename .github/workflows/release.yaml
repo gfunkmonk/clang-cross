@@ -35,7 +35,6 @@ jobs:
           CCACHE_NOHASHDIR=true
           CCACHE_COMPRESS=1
           CCACHE_COMPRESSLEVEL=6
-          CCACHE_DEPEND=1
           CCACHE_NOFILECLONE=true
           CCACHE_NOHARDLINK=true
           CCACHE_INODECACHE=true
