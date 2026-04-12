@@ -1,1 +1,1 @@
-CLANG_ARGS=""
+CLANG_ARGS="-mpowerpc"
