@@ -33,14 +33,13 @@ jobs:
           cat >> $GITHUB_ENV << 'EOF'
           CCACHE_SLOPPINESS=file_macro,locale,time_macros
           CCACHE_NOHASHDIR=true
-          CCACHE_COMPRESS=1
+          CCACHE_COMPRESS=true
           CCACHE_COMPRESSLEVEL=6
           CCACHE_NOFILECLONE=true
           CCACHE_NOHARDLINK=true
           CCACHE_INODECACHE=true
           CCACHE_NLEVELS=4
           CCACHE_COMPILERCHECK=content
-          CCACHE_DIRECT=true
           CCACHE_DEPEND=true
           EOF
 
@@ -71,6 +70,7 @@ jobs:
         if: steps.cache-llvm.outputs.cache-hit != 'true'
         run: |
           sudo rm -rf /opt/clang-cross
+          umask 0022
           ./scripts/make llvm
 
       - name: Upload package

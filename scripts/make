@@ -2,6 +2,7 @@
 
 set -e
 set -o pipefail
+umask 0022
 
 CT_URL="https://github.com/cross-tools"
 CT_VER=20250929
@@ -57,7 +58,7 @@ build_llvm() {
 build_target() {
 	TARGET=${1}
 	. targets/${TARGET}/config
-	sudo tar -xf clang-cross.tar.xz -C /opt
+	sudo tar --no-follow-symlink -xf clang-cross.tar.xz -C /opt
 	sudo chown -R $(id -u):$(id -g) /opt/clang-cross
 	case ${TARGET} in
 		*gnu*)
@@ -73,18 +74,19 @@ build_target() {
 			downloaded=true
 			break
 		fi
+		rm -rf "${TARGET}"
 		sleep 5
 	done
 	if [ "${downloaded}" = "false" ]; then
 		echo "ERROR: Failed to download ${URL} after 10 attempts" >&2
 		exit 1
 	fi
-	find ${TARGET} -exec chmod +w {} +
-	cp -a ${TARGET}/include /opt/clang-cross/
-	cp -a ${TARGET}/lib/gcc /opt/clang-cross/lib/
-	cp -a ${TARGET}/${TARGET} /opt/clang-cross/
-	rm -rf /opt/clang-cross/lib/gcc/${TARGET}/*/{install-tools,plugin}
-	rm -rf /opt/clang-cross/${TARGET}/{bin,debug-root,lib}
+	find "${TARGET}" -exec chmod +w {} +
+	cp -a "${TARGET}/include" /opt/clang-cross/
+	cp -a "${TARGET}/lib/gcc" /opt/clang-cross/lib/
+	cp -a "${TARGET}/${TARGET}" /opt/clang-cross/
+	rm -rf "/opt/clang-cross/lib/gcc/${TARGET}"/*/{install-tools,plugin}
+	rm -rf "/opt/clang-cross/${TARGET}"/{bin,debug-root,lib}
 	for n in clang:clang clang++:clang++ cpp:clang-cpp; do
 		cat > /opt/clang-cross/bin/${TARGET}-${n%%:*} <<-EOF
 			#!/bin/sh
@@ -128,11 +130,11 @@ build_target() {
 			;;
 	esac
 	find /opt/clang-cross -exec chmod -w {} +
-	rm -rf ${TARGET}
-	sudo mv /opt/clang-cross ${TARGET}
-	sudo chown -R root:root ${TARGET}
-	sudo tar -cJvf ${TARGET}.tar.xz ${TARGET}
-	sudo sha256sum ${TARGET}.tar.xz | awk '{ print $1 }' > ${TARGET}.tar.xz.sha256
+	rm -rf "${TARGET}"
+	sudo mv /opt/clang-cross "${TARGET}"
+	sudo chown -R root:root "${TARGET}"
+	sudo tar -cJvf "${TARGET}.tar.xz" "${TARGET}"
+	sudo sha256sum "${TARGET}.tar.xz" | awk '{ print $1 }' > "${TARGET}.tar.xz.sha256"
 }
 
 install_packages
