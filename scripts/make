@@ -58,7 +58,7 @@ build_llvm() {
 build_target() {
 	TARGET=${1}
 	. targets/${TARGET}/config
-	sudo tar --no-follow-symlink -xf clang-cross.tar.xz -C /opt
+	sudo tar -xf clang-cross.tar.xz -C /opt
 	sudo chown -R $(id -u):$(id -g) /opt/clang-cross
 	case ${TARGET} in
 		*gnu*)
