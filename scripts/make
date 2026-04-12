@@ -4,11 +4,22 @@ set -e
 set -o pipefail
 umask 0022
 
+# Get the absolute path to the directory where this script lives (e.g., /.../repo/scripts)
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# Move up one level to the repository root (e.g., /.../repo)
+REPODIR="$(dirname "$SCRIPT_DIR")"
+# Ensure we can find the targets directory relative to the repo root
+TARGETS_DIR="${REPODIR}/targets"
+
 CT_URL="https://github.com/cross-tools"
 CT_VER=20250929
 GF_URL="https://github.com/gfunkmonk"
 GF_VER=ladder
-LLVM_TARGETS="AArch64;ARM;LoongArch;Mips;PowerPC;RISCV;SystemZ;X86"
+
+#LLVM_TARGETS="AArch64;ARM;LoongArch;Mips;PowerPC;RISCV;SystemZ;X86;DirectX;SPIRV"
+#LLVM_EXPERIMENTAL_TARGETS_TO_BUILD="M68k;SH4;OR1K"
+
+LLVM_TARGETS="AArch64;ARM;LoongArch;Mips;PowerPC;RISCV;SystemZ;X86;Lanai;Sparc"
 LLVM_EXPERIMENTAL_TARGETS_TO_BUILD="M68k"
 
 install_packages() {
@@ -47,12 +58,17 @@ build_llvm() {
 		-DLLVM_TARGETS_TO_BUILD="${LLVM_TARGETS}" \
 		-DLLVM_EXPERIMENTAL_TARGETS_TO_BUILD="${LLVM_EXPERIMENTAL_TARGETS_TO_BUILD}" \
 		-DLLVM_INSTALL_TOOLCHAIN_ONLY=ON \
-		-DBUILD_SHARED_LIBS=OFF \
+		-DLLVM_ENABLE_TELEMETRY=OFF \
 		-DLLVM_INCLUDE_TESTS=OFF \
 		-DLLVM_ENABLE_PLUGINS=OFF
 	ninja install/strip
 	popd
-	rm -rf build-llvm
+
+          # Check if install succeeded before wiping
+          if [ -d "/opt/clang-cross/bin" ]; then
+            rm -rf build-llvm
+          fi
+
 	sudo mv /opt/clang-cross .
 	sudo chown -R root:root clang-cross
 	sudo tar -cJvf clang-cross.tar.xz clang-cross
@@ -60,7 +76,14 @@ build_llvm() {
 
 build_target() {
 	TARGET=${1}
-	. targets/${TARGET}/config
+          # Use the variable defined at the top of the script
+          if [ -f "${TARGETS_DIR}/${TARGET}/config" ]; then
+            . "${TARGETS_DIR}/${TARGET}/config"
+          else
+            echo "ERROR: Configuration for ${TARGET} not found in ${TARGETS_DIR}" >&2
+            exit 1
+          fi
+
 	sudo tar -xf clang-cross.tar.xz -C /opt
 	sudo chown -R $(id -u):$(id -g) /opt/clang-cross
 	case ${TARGET} in
@@ -72,10 +95,11 @@ build_target() {
 			;;
 	esac
 	downloaded=false
+	mkdir -p "${TARGET}"
 	for n in {0..9}; do
-		if wget -O - "${URL}" | tar xJ; then
-			downloaded=true
-			break
+		if wget -O - "${URL}" | tar xJ -C "${TARGET}" --strip-components=1; then
+    			downloaded=true
+    			break
 		fi
 		rm -rf "${TARGET}"
 		sleep 5
@@ -90,49 +114,62 @@ build_target() {
 	cp -a "${TARGET}/${TARGET}" /opt/clang-cross/
 	rm -rf "/opt/clang-cross/lib/gcc/${TARGET}"/*/{install-tools,plugin}
 	rm -rf "/opt/clang-cross/${TARGET}"/{bin,debug-root,lib}
-	for n in clang:clang clang++:clang++ cpp:clang-cpp; do
-		cat > /opt/clang-cross/bin/${TARGET}-${n%%:*} <<-EOF
-			#!/bin/sh
+	# 1. Create Clang/LLVM-based wrappers with robust quoting
+    for n in clang:clang clang++:clang++ cpp:clang-cpp; do
+        wrapper_name="${TARGET}-${n%%:*}"
+        binary_name="${n##*:}"
+        
+        # We use a single-quoted heredoc 'EOF' to prevent variable expansion 
+        # of $0 and $@ during creation, but we allow ${CLANG_ARGS} to expand now.
+        cat > "/opt/clang-cross/bin/${wrapper_name}" <<EOF
+#!/bin/sh
+BINDIR=\$(dirname "\$0")
+TARGET="${TARGET}"
+exec "\${BINDIR}/${binary_name}" --target="\${TARGET}" --sysroot="\${BINDIR}/../\${TARGET}/sysroot" ${CLANG_ARGS} "\$@"
+EOF
+        chmod +x "/opt/clang-cross/bin/${wrapper_name}"
+    done
 
-			TARGET=${TARGET}
-			BINDIR=\$(dirname "\$0")
+    # 2. Setup standard aliases
+    ln -sf "${TARGET}-clang" "/opt/clang-cross/bin/${TARGET}-cc"
+    ln -sf "${TARGET}-clang++" "/opt/clang-cross/bin/${TARGET}-c++"
 
-			exec "\${BINDIR}/${n##*:}" --target=\${TARGET} --sysroot=\${BINDIR}/../\${TARGET}/sysroot ${CLANG_ARGS} "\$@"
-		EOF
-		chmod +x /opt/clang-cross/bin/${TARGET}-${n%%:*}
-	done
-	ln -sf ${TARGET}-clang /opt/clang-cross/bin/${TARGET}-cc
-	ln -sf ${TARGET}-clang++ /opt/clang-cross/bin/${TARGET}-c++
-	for n in ar:ar c++filt:cxxfilt nm:nm objcopy:objcopy objdump:objdump ranlib:ranlib size:size strings:strings strip:strip; do
-		cat > /opt/clang-cross/bin/${TARGET}-${n%%:*} <<-EOF
-			#!/bin/sh
-
-			BINDIR=\$(dirname "\$0")
-
-			exec "\${BINDIR}/llvm-${n##*:}" "\$@"
-		EOF
-		chmod +x /opt/clang-cross/bin/${TARGET}-${n%%:*}
-	done
+    # 3. Create LLVM tool wrappers (ar, nm, etc.)
+    for n in ar:ar c++filt:cxxfilt nm:nm objcopy:objcopy objdump:objdump ranlib:ranlib size:size strings:strings strip:strip; do
+        wrapper_name="${TARGET}-${n%%:*}"
+        llvm_tool="llvm-${n##*:}"
+        
+        cat > "/opt/clang-cross/bin/${wrapper_name}" <<EOF
+#!/bin/sh
+BINDIR=\$(dirname "\$0")
+exec "\${BINDIR}/${llvm_tool}" "\$@"
+EOF
+        chmod +x "/opt/clang-cross/bin/${wrapper_name}"
+    done
 	# For targets with no LLVM backend, install GCC binaries instead of clang wrappers
 	case ${TARGET} in
-		sh4-*|or1k-*)
-			# Remove the non-functional clang wrappers first
-			rm -f /opt/clang-cross/bin/${TARGET}-clang
-			rm -f /opt/clang-cross/bin/${TARGET}-clang++
-			rm -f /opt/clang-cross/bin/${TARGET}-cpp
-			for n in gcc g++ cpp ar nm objcopy objdump ranlib strip; do
-				bin="${TARGET}/bin/${TARGET}-${n}"
-				if [[ -f "$bin" ]]; then
-					cp "$bin" /opt/clang-cross/bin/
-					chmod +x /opt/clang-cross/bin/${TARGET}-${n}
-				fi
-			done
-			# Overwrite the cc/c++ symlinks clang loop just created
-			ln -sf ${TARGET}-gcc  /opt/clang-cross/bin/${TARGET}-cc
-			ln -sf ${TARGET}-g++  /opt/clang-cross/bin/${TARGET}-c++
-			;;
+    		sh4-*|or1k-*)
+        		# 1. Remove the clang wrappers because this Clang build doesn't support these CPUs
+        		rm -f /opt/clang-cross/bin/${TARGET}-clang
+        		rm -f /opt/clang-cross/bin/${TARGET}-clang++
+        		rm -f /opt/clang-cross/bin/${TARGET}-cpp
+	        	# 2. Copy the real GCC binaries from the extracted musl-cross tarball
+        		# Assuming you used: tar xJ -C "${TARGET}" --strip-components=1
+        		for n in gcc g++ cpp ar nm objcopy objdump ranlib strip; do
+            		# The binaries are now directly in ${TARGET}/bin/ due to --strip-components=1
+            		bin_source="${TARGET}/bin/${TARGET}-${n}"
+            		if [ -f "$bin_source" ]; then
+                			cp "$bin_source" /opt/clang-cross/bin/
+                			chmod +x "/opt/clang-cross/bin/${TARGET}-${n}"
+            		fi
+        		done
+		# 3. Fix the symlinks to point to GCC instead of Clang
+        		ln -sf "${TARGET}-gcc" "/opt/clang-cross/bin/${TARGET}-cc"
+        		ln -sf "${TARGET}-g++" "/opt/clang-cross/bin/${TARGET}-c++"
+        		;;
 	esac
-	find /opt/clang-cross ! -type l -exec chmod -w {} +
+
+	sudo find /opt/clang-cross ! -type l -exec chmod -w {} +
 	rm -rf "${TARGET}"
 	sudo mv /opt/clang-cross "${TARGET}"
 	sudo chown -R root:root "${TARGET}"

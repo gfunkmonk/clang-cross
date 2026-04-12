@@ -9,7 +9,7 @@ on:
 jobs:
   build-llvm:
     name: Build LLVM
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-22.04
     steps:
       - name: Checkout
         uses: actions/checkout@v6
@@ -67,12 +67,13 @@ jobs:
           verbose: 2
           save: true
 
-      - name: Build
+      - name: Build LLVM
         if: steps.cache-llvm.outputs.cache-hit != 'true'
         run: |
           sudo rm -rf /opt/clang-cross
           umask 0022
-          ./scripts/make llvm
+          chmod +x ./scripts/make
+          bash ./scripts/make llvm
 
       - name: Upload package
         uses: actions/upload-artifact@v7
@@ -84,7 +85,7 @@ jobs:
 
   build-targets:
     name: Build Targets
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-22.04
     needs:
       - build-llvm
     strategy:
@@ -148,11 +149,12 @@ jobs:
           key: target-${{ matrix.target }}-${{ steps.llvm-hash.outputs.hash }}
 
       # Fixed indentation here
-      - name: Build
+      - name: Build el Target
         if: steps.cache-target.outputs.cache-hit != 'true'
         run: |
           sudo rm -rf /opt/clang-cross
-          ./scripts/make ${{ matrix.target }}
+          chmod +x ./scripts/make
+          bash ./scripts/make ${{ matrix.target }}
 
       - name: Upload package
         uses: actions/upload-artifact@v7
@@ -172,7 +174,7 @@ jobs:
 
   release:
     name: Release
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-22.04
     needs:
       - build-targets
     if: github.event_name == 'release'
