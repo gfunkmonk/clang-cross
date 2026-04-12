@@ -47,6 +47,11 @@ jobs:
           sudo mkdir -p /mnt/ccache
           sudo chown -R $USER:$USER /mnt/ccache
           echo "CCACHE_DIR=/mnt/ccache" >> $GITHUB_ENV
+          echo "CCACHE Dir Set!"
+          # Setup tarballs dir for download caching
+          sudo mkdir -p /mnt/tarballs
+          sudo chown -R $USER:$USER /mnt/tarballs
+          df -h
           echo "CCACHE Environment set!"
 
       - name: 🏎 🅴🅽🅰🅱🅻🅴 🅲🅲🅰🅲🅷🅴 🏁
