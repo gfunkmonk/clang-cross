@@ -10,8 +10,6 @@ jobs:
   build-llvm:
     name: Build LLVM
     runs-on: ubuntu-22.04
-    env:
-      CCACHE_DIR: ${{ github.workspace }}/.ccache
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -27,19 +25,55 @@ jobs:
         with:
           path: clang-cross.tar.xz
           key: clang-cross-${{ steps.llvm-hash.outputs.hash }}
-      - name: Restore ccache
+      - name: 🅲🅲🅰🅲🅷🅴 🅴🅽🆅🅸🆁🅾🅽🅼🅴🅽🆃 🆅🅰🆁🅸🅰🅱🅻🅴🆂
+        run: |
+          DEBIAN_FRONTEND=noninteractive sudo apt-get -y update
+          DEBIAN_FRONTEND=noninteractive sudo apt-get -y install apt-utils
+          DEBIAN_FRONTEND=noninteractive sudo apt-get -y install ccache
+          cat >> $GITHUB_ENV << 'EOF'
+          CCACHE_SLOPPINESS=file_macro,locale,time_macros
+          CCACHE_NOHASHDIR=true
+          CCACHE_COMPRESS=1
+          CCACHE_COMPRESSLEVEL=6
+          CCACHE_DEPEND=1
+          CCACHE_NOFILECLONE=true
+          CCACHE_NOHARDLINK=true
+          CCACHE_INODECACHE=true
+          CCACHE_NLEVELS=4
+          CCACHE_COMPILERCHECK=content
+          CCACHE_DIRECT=true
+          CCACHE_DEPEND=true
+          EOF
+
+          # Setup CCACHE Dir
+          sudo mkdir -p /mnt/ccache
+          sudo chown -R $USER:$USER /mnt/ccache
+          echo "CCACHE_DIR=/mnt/ccache" >> $GITHUB_ENV
+          echo "CCACHE Dir Set!"
+          # Setup tarballs dir for download caching
+          sudo mkdir -p /mnt/tarballs
+          sudo chown -R $USER:$USER /mnt/tarballs
+          df -h
+          echo "CCACHE Environment set!"
+
+      - name: 🏎 🅴🅽🅰🅱🅻🅴 🅲🅲🅰🅲🅷🅴 🏁
         if: steps.cache-llvm.outputs.cache-hit != 'true'
-        uses: actions/cache@v4
+        uses: hendrikmuhs/ccache-action@v1.2
         with:
-          path: ${{ github.workspace }}/.ccache
-          key: ccache-${{ steps.llvm-hash.outputs.hash }}
-          restore-keys: ccache-
-          save-always: true
+          create-symlink: 'true'
+          key: ccache-${{ runner.os }}-llvm-${{ steps.llvm-hash.outputs.hash }}
+          restore-keys: |
+            ccache-${{ runner.os }}-llvm-
+          max-size: '5000MB'
+          verbose: 2
+          save: true
+
       - name: Build
         if: steps.cache-llvm.outputs.cache-hit != 'true'
         run: |
           sudo rm -rf /opt/clang-cross
           ./scripts/make llvm
+
       - name: Upload package
         uses: actions/upload-artifact@v4
         with:
@@ -95,14 +129,24 @@ jobs:
         with:
           fetch-depth: 1
           submodules: true
+
       - name: Download
         uses: actions/download-artifact@v4
         with:
           name: clang-cross.tar.xz
+
+      - name: Cache musl-cross tarball
+        uses: actions/cache@v4
+        with:
+          path: ${{ matrix.target }}.tar.xz
+          key: musl-cross-${{ matrix.target }}
+
+      # Fixed indentation here
       - name: Build
         run: |
           sudo rm -rf /opt/clang-cross
           ./scripts/make ${{ matrix.target }}
+
       - name: Upload package
         uses: actions/upload-artifact@v4
         with:
@@ -110,6 +154,7 @@ jobs:
           path: ${{ matrix.target }}.tar.xz
           if-no-files-found: error
           retention-days: 1
+
       - name: Upload checksum
         uses: actions/upload-artifact@v4
         with:
@@ -129,12 +174,14 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 1
+
       - name: Download artifacts
         uses: actions/download-artifact@v4
         with:
           path: release
           pattern: "*-*-*.tar.*"
           merge-multiple: true
+
       - name: Generate checksums
         run: |
           echo "| Filename | Sha256sum |" > RELEASE.md
@@ -142,6 +189,7 @@ jobs:
           for i in release/*.sha256; do
             echo "| $(basename $i .sha256) | $(cat $i) |" >> RELEASE.md
           done
+
       - name: Upload artifacts
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
