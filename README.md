@@ -6,28 +6,28 @@ This is a simple, lightweight project for making cross-compilation toolchain wit
 
 | Target                         | Kernel  | Clang  | Libc   |
 |--------------------------------|---------|--------|--------|
-| aarch64-unknown-linux-musl     | 6.18.19 | 21.1.8 | 1.2.6  |
-| arm-unknown-linux-musleabi     | 6.18.19 | 21.1.8 | 1.2.6  |
-| arm-unknown-linux-musleabihf   | 6.18.19 | 21.1.8 | 1.2.6  |
-| armv7-unknown-linux-musleabi   | 6.18.19 | 21.1.8 | 1.2.6  |
-| armv7-unknown-linux-musleabihf | 6.18.19 | 21.1.8 | 1.2.6  |
-| i586-unknown-linux-musl        | 6.18.19 | 21.1.8 | 1.2.6  |
-| i686-unknown-linux-musl        | 6.18.19 | 21.1.8 | 1.2.6  |
-| loongarch64-unknown-linux-musl | 5.19.16 | 21.1.8 | 1.2.6  |
-| mips64el-unknown-linux-musl    | 6.18.19 | 21.1.8 | 1.2.6  |
-| mips64-unknown-linux-musl      | 6.18.19 | 21.1.8 | 1.2.6  |
-| mipsel-unknown-linux-musl      | 6.18.19 | 21.1.8 | 1.2.6  |
-| mipsel-unknown-linux-muslsf    | 6.18.19 | 21.1.8 | 1.2.6  |
-| mips-unknown-linux-musl        | 6.18.19 | 21.1.8 | 1.2.6  |
-| mips-unknown-linux-muslsf      | 6.18.19 | 21.1.8 | 1.2.6  |
-| powerpc64le-unknown-linux-musl | 6.18.19 | 21.1.8 | 1.2.6  |
-| powerpc64-unknown-linux-musl   | 6.18.19 | 21.1.8 | 1.2.6  |
-| powerpcle-unknown-linux-musl   | 6.18.19 | 21.1.8 | 1.2.6  |
-| powerpc-unknown-linux-musl     | 6.18.19 | 21.1.8 | 1.2.6  |
-| riscv32-unknown-linux-musl     | 6.18.19 | 21.1.8 | 1.2.6  |
-| riscv64-unknown-linux-musl     | 6.18.19 | 21.1.8 | 1.2.6  |
-| s390x-ibm-linux-musl           | 6.18.19 | 21.1.8 | 1.2.6  |
-| x86_64-unknown-linux-musl      | 6.18.19 | 21.1.8 | 1.2.6  |
+| aarch64-unknown-linux-musl     | 6.18.22 | 21.1.8 | 1.2.6  |
+| arm-unknown-linux-musleabi     | 6.18.22 | 21.1.8 | 1.2.6  |
+| arm-unknown-linux-musleabihf   | 6.18.22 | 21.1.8 | 1.2.6  |
+| armv7-unknown-linux-musleabi   | 6.18.22 | 21.1.8 | 1.2.6  |
+| armv7-unknown-linux-musleabihf | 6.18.22 | 21.1.8 | 1.2.6  |
+| i586-unknown-linux-musl        | 6.18.22 | 21.1.8 | 1.2.6  |
+| i686-unknown-linux-musl        | 6.18.22 | 21.1.8 | 1.2.6  |
+| loongarch64-unknown-linux-musl | 6.18.22 | 21.1.8 | 1.2.6  |
+| mips64el-unknown-linux-musl    | 6.18.22 | 21.1.8 | 1.2.6  |
+| mips64-unknown-linux-musl      | 6.18.22 | 21.1.8 | 1.2.6  |
+| mipsel-unknown-linux-musl      | 6.18.22 | 21.1.8 | 1.2.6  |
+| mipsel-unknown-linux-muslsf    | 6.18.22 | 21.1.8 | 1.2.6  |
+| mips-unknown-linux-musl        | 6.18.22 | 21.1.8 | 1.2.6  |
+| mips-unknown-linux-muslsf      | 6.18.22 | 21.1.8 | 1.2.6  |
+| powerpc64le-unknown-linux-musl | 6.18.22 | 21.1.8 | 1.2.6  |
+| powerpc64-unknown-linux-musl   | 6.18.22 | 21.1.8 | 1.2.6  |
+| powerpcle-unknown-linux-musl   | 6.18.22 | 21.1.8 | 1.2.6  |
+| powerpc-unknown-linux-musl     | 6.18.22 | 21.1.8 | 1.2.6  |
+| riscv32-unknown-linux-musl     | 6.18.22 | 21.1.8 | 1.2.6  |
+| riscv64-unknown-linux-musl     | 6.18.22 | 21.1.8 | 1.2.6  |
+| s390x-ibm-linux-musl           | 6.18.22 | 21.1.8 | 1.2.6  |
+| x86_64-unknown-linux-musl      | 6.18.22 | 21.1.8 | 1.2.6  |
 
 ## How to use
 
