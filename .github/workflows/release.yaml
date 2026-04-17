@@ -31,10 +31,8 @@ name: Release
         default: false
       make_release:
         description: GitHub Release?
-        type: choice
-        required: true
-        options: [no, yes]
-        default: no
+        type: boolean
+        default: false
       release_name:
         description: Release name?
         type: string
@@ -166,6 +164,7 @@ jobs:
           - i486-unknown-linux-gnu
           - i586-unknown-linux-gnu
           - i686-unknown-linux-gnu
+          - loongarch32-unknown-linux-gnu
           - loongarch64-unknown-linux-gnu
           - m68k-unknown-linux-gnu
           - microblaze-xilinx-linux-gnu
@@ -325,7 +324,7 @@ jobs:
       - build-gnu-targets
       - build-musl-targets
     if: |
-      !cancelled() && github.event.inputs.make_release == 'yes'
+      !cancelled() && github.event.inputs.make_release == 'true'
     permissions:
       contents: write
     steps:
@@ -346,8 +345,7 @@ jobs:
           for i in release/*.sha256; do
             echo "| $(basename $i .sha256) | $(cat $i) |" >> RELEASE.md
           done
-      #- if: '${{ inputs.release_name != '''' && inputs.make_release }}'
-      - if: '${{ inputs.release_name != '''' && inputs.make_release == ''yes'' }}'
+      - if: '${{ inputs.release_name != '''' && inputs.make_release }}'
         name: Create Release
         uses: xiechangan123/action-gh-release@master
         with:
