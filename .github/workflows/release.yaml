@@ -143,6 +143,7 @@ jobs:
       matrix:
         target:
           - aarch64-unknown-linux-musl
+          - aarch64_be-unknown-linux-musl
           - arm-unknown-linux-musleabi
           - arm-unknown-linux-musleabihf
           - armv5-unknown-linux-musleabi
