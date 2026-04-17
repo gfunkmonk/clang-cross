@@ -64,7 +64,7 @@ jobs:
         name: Add Swap Space for Build
         uses: pierotofy/set-swap-space@master
         with:
-          swap-size-gb: '${{ inputs.swapsize }}
+          swap-size-gb: '${{ inputs.swapsize }}'
       - name: Checkout
         uses: actions/checkout@v6
         with:
