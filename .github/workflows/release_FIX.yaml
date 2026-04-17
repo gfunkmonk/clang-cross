@@ -188,14 +188,14 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: clang-cross.tar.xz
-      - name: Cache musl-cross tarball
-        uses: actions/cache@v5
-        id: cache-target
-        with:
-          path: |
-            ${{ matrix.target }}.tar.xz
-            ${{ matrix.target }}.tar.xz.sha256
-          key: 'target-${{ matrix.target }}-${{ steps.llvm-hash.outputs.hash }}'
+      #- name: Cache musl-cross tarball
+      #  uses: actions/cache@v5
+      #  id: cache-target
+      #  with:
+      #    path: |
+      #      ${{ matrix.target }}.tar.xz
+      #      ${{ matrix.target }}.tar.xz.sha256
+      #    key: 'target-${{ matrix.target }}-${{ steps.llvm-hash.outputs.hash }}'
       - name: Build el Target
         if: steps.cache-target.outputs.cache-hit != 'true'
         run: |
