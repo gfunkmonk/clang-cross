@@ -42,6 +42,13 @@ build_llvm() {
               exit 1
           fi
 
+          # Patch: add 'decodePositionallyEncodedOperands' to InstrInfo in Target.td
+          # if not already present (SuperH.td references it but older Target.td lacks it).
+          if ! grep -q 'decodePositionallyEncodedOperands' "${REPODIR}/llvm/llvm/include/llvm/Target/Target.td"; then
+              sed -i 's/^\(class InstrInfo {\)$/\1\n  bit decodePositionallyEncodedOperands = false;/' \
+                  "${REPODIR}/llvm/llvm/include/llvm/Target/Target.td"
+          fi
+
 	sudo mkdir -p /opt
 	sudo chmod 0777 /opt
 	mkdir -p build-llvm
