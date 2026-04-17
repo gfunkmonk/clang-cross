@@ -12,9 +12,9 @@ REPODIR="$(dirname "$SCRIPT_DIR")"
 TARGETS_DIR="${REPODIR}/targets"
 
 CT_URL="https://github.com/gfunkmonk"
-CT_VER=onelittleendian
+CT_VER=twolittleendian
 GF_URL="https://github.com/gfunkmonk"
-GF_VER=ladder
+GF_VER=farmer
 
 #LLVM_TARGETS="AArch64;ARM;LoongArch;Mips;PowerPC;RISCV;SystemZ;X86;DirectX;SPIRV"
 #LLVM_EXPERIMENTAL_TARGETS_TO_BUILD="M68k;SH4;OR1K"
