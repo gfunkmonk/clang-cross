@@ -42,6 +42,18 @@ build_llvm() {
               exit 1
           fi
 
+	# Patch OR1KInstrInfo.td: update old string-based AssemblerPredicate syntax
+	# to the dag-based syntax required by LLVM 12+.
+	# Old: AssemblerPredicate<"FeatureX">  / AssemblerPredicate<"!FeatureX">
+	# New: AssemblerPredicate<(all_of FeatureX)> / AssemblerPredicate<(all_of (not FeatureX))>
+	OR1K_INSTR_TD="llvm/llvm/lib/Target/OR1K/OR1KInstrInfo.td"
+	if [ -f "${OR1K_INSTR_TD}" ]; then
+		sed -i \
+			-e 's/AssemblerPredicate<"!\(Feature[A-Za-z0-9_]*\)">/AssemblerPredicate<(all_of (not \1))>/g' \
+			-e 's/AssemblerPredicate<"\(Feature[A-Za-z0-9_]*\)">/AssemblerPredicate<(all_of \1)>/g' \
+			"${OR1K_INSTR_TD}"
+	fi
+
 	sudo mkdir -p /opt
 	sudo chmod 0777 /opt
 	mkdir -p build-llvm
