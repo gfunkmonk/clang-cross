@@ -6,8 +6,8 @@ name: Release
         description: 'Libc type to build'
         required: true
         type: choice
-        options: [musl, gnu]
-        default: musl
+        options: [both, musl, gnu]
+        default: both
       freespace:
         description: Free Up Disk Space
         required: true
@@ -145,7 +145,7 @@ jobs:
     name: Build GNU Targets
     runs-on: ubuntu-24.04
     needs: build-llvm
-    if: inputs.libc == 'gnu'
+    if: inputs.libc == 'gnu' || inputs.libc == 'both'
     strategy:
       fail-fast: false
       matrix:
@@ -236,7 +236,7 @@ jobs:
     name: Build MUSL Targets
     runs-on: ubuntu-24.04
     needs: build-llvm
-    if: inputs.libc == 'musl'
+    if: inputs.libc == 'musl' || inputs.libc == 'both'
     strategy:
       fail-fast: false
       matrix:
@@ -325,7 +325,10 @@ jobs:
       - build-gnu-targets
       - build-musl-targets
     if: |
-      !cancelled() && github.event.inputs.make_release == 'yes'
+      !cancelled() &&
+      (needs.build-gnu-targets.result == 'success' || needs.build-gnu-targets.result == 'skipped') &&
+      (needs.build-musl-targets.result == 'success' || needs.build-musl-targets.result == 'skipped') &&
+      github.event.inputs.make_release == 'yes'
     permissions:
       contents: write
     steps:
