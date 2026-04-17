@@ -99,7 +99,7 @@ defvar PseudosWithPtrOps = [
 ];
 
 /// Replace PointerLikeRegClass operands in OperandList with new_rc.
-class RemapPointerOperandList<dag OperandList, RegisterClassLike new_rc> {
+class RemapPointerOperandList<dag OperandList, RegisterClass new_rc> {
   // Collect the set of names so we can query and rewrite them.
   list<string> op_names = !foreach(i, !range(!size(OperandList)),
                                       !getdagname(OperandList, i));
@@ -125,7 +125,7 @@ class RemapPointerOperandList<dag OperandList, RegisterClassLike new_rc> {
 /// Define an override for a pseudoinstruction which uses a pointer
 /// register class, specialized to the target's pointer type.
 class RemapPointerOperands<StandardPseudoInstruction inst,
-                           RegisterClassLike new_rc> :
+                           RegisterClass new_rc> :
   TargetSpecializedStandardPseudoInstruction<inst> {
   let OutOperandList =
     RemapPointerOperandList<inst.OutOperandList, new_rc>.ret;
@@ -136,7 +136,7 @@ class RemapPointerOperands<StandardPseudoInstruction inst,
 /// Helper to replace all pseudoinstructions using pointers to a
 /// target register class. Most targets should use this.
 multiclass RemapAllTargetPseudoPointerOperands<
-  RegisterClassLike default_ptr_rc> {
+  RegisterClass default_ptr_rc> {
   foreach inst = PseudosWithPtrOps in {
     def : RemapPointerOperands<inst, default_ptr_rc>;
   }
