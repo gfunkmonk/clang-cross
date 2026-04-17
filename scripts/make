@@ -38,6 +38,66 @@ install_packages() {
 build_llvm() {
 	sudo mkdir -p /opt
 	sudo chmod 0777 /opt
+
+	# Patch OR1K.td: SubtargetFeature defs must be defined before OR1KInstrInfo.td
+	# includes them via (all_of FeatureX) AssemblerPredicate dag syntax.
+	python3 - <<'PYEOF'
+import re, sys
+
+path = 'llvm/llvm/lib/Target/OR1K/OR1K.td'
+try:
+    with open(path) as f:
+        content = f.read()
+except FileNotFoundError:
+    sys.exit(0)
+
+# Extract the feature definition block (between the two comment headers)
+feature_block_re = re.compile(
+    r'(//===[-=]+===//\n// OR1K subtarget features\n//===[-=]+===//\n)(.*?)'
+    r'(//===[-=]+===//\n// OR1K processors)',
+    re.DOTALL
+)
+m = feature_block_re.search(content)
+if not m:
+    print('OR1K.td: feature block not found or already patched, skipping')
+    sys.exit(0)
+
+feature_defs = m.group(1) + m.group(2)  # header + defs
+
+# Check features are already before the includes — if so, skip
+includes_pos = content.find('include "OR1KRegisterInfo.td"')
+features_pos = content.find('def FeatureMul')
+if includes_pos != -1 and features_pos != -1 and features_pos < includes_pos:
+    print('OR1K.td: already patched, skipping')
+    sys.exit(0)
+
+# Remove the feature block from its current location
+content_without_features = feature_block_re.sub(r'//===----------------------------------------------------------------------===//\n// OR1K processors', content, count=1)
+
+# Insert feature block after 'include "llvm/Target/Target.td"' line
+insert_after = 'include "llvm/Target/Target.td"\n'
+insert_pos = content_without_features.find(insert_after)
+if insert_pos == -1:
+    print('OR1K.td: could not find insertion point, skipping')
+    sys.exit(0)
+
+insert_pos += len(insert_after)
+patched = (content_without_features[:insert_pos] + '\n' +
+           feature_defs.rstrip('\n') + '\n\n' +
+           content_without_features[insert_pos:])
+
+# Remove the now-empty "OR1K Subtarget features." placeholder section
+patched = re.sub(
+    r'//===[-=]+===//\n// OR1K Subtarget features\.\n//===[-=]+===//\n\n',
+    '',
+    patched
+)
+
+with open(path, 'w') as f:
+    f.write(patched)
+print('OR1K.td: patched successfully (moved SubtargetFeature defs before includes)')
+PYEOF
+
 	mkdir -p build-llvm
 	pushd build-llvm
 	cmake -G Ninja -S ../llvm/llvm \
