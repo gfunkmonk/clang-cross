@@ -16,10 +16,7 @@ CT_VER=twolittleendian
 GF_URL="https://github.com/gfunkmonk"
 GF_VER=farmer
 
-#LLVM_TARGETS="AArch64;ARM;LoongArch;Mips;PowerPC;RISCV;SystemZ;X86;DirectX;SPIRV"
-#LLVM_EXPERIMENTAL_TARGETS_TO_BUILD="M68k;SH4;OR1K"
-
-LLVM_TARGETS="AArch64;AArch64_be;ARM;LoongArch;Mips;PowerPC;RISCV;SystemZ;X86;Lanai;Sparc;M68k"
+LLVM_TARGETS="AArch64;AArch64_be;ARM;LoongArch;Mips;PowerPC;RISCV;SystemZ;X86;Lanai;Sparc;M68k;OR1K;SuperH"
 LLVM_EXPERIMENTAL_TARGETS_TO_BUILD="M68k"
 
 install_packages() {
@@ -164,43 +161,43 @@ EOF
         chmod +x "/opt/clang-cross/bin/${wrapper_name}"
     done
 	# For targets with no LLVM backend, install GCC binaries instead of clang wrappers
-	case ${TARGET} in
-    		sh4-*|or1k-*)
+	#case ${TARGET} in
+    	#	sh4-*|or1k-*)
         		# 1. Remove the clang wrappers because this Clang build doesn't support these CPUs
-        		rm -f /opt/clang-cross/bin/${TARGET}-clang
-        		rm -f /opt/clang-cross/bin/${TARGET}-clang++
-        		rm -f /opt/clang-cross/bin/${TARGET}-cpp
+        	#	rm -f /opt/clang-cross/bin/${TARGET}-clang
+        	#	rm -f /opt/clang-cross/bin/${TARGET}-clang++
+        	#	rm -f /opt/clang-cross/bin/${TARGET}-cpp
 	        	# 2. Copy the real GCC binaries from the extracted musl-cross tarball
         		# Assuming you used: tar xJ -C "${TARGET}" --strip-components=1
-        		for n in gcc g++ cpp ar nm objcopy objdump ranlib strip; do
+        	#	for n in gcc g++ cpp ar nm objcopy objdump ranlib strip; do
             		# The binaries are now directly in ${TARGET}/bin/ due to --strip-components=1
-            		bin_source="${TARGET}/bin/${TARGET}-${n}"
-            		if [ -f "$bin_source" ]; then
-                			cp "$bin_source" /opt/clang-cross/bin/
-                			chmod +x "/opt/clang-cross/bin/${TARGET}-${n}"
-            		fi
-        		done
+          #  		bin_source="${TARGET}/bin/${TARGET}-${n}"
+          #  		if [ -f "$bin_source" ]; then
+          #      			cp "$bin_source" /opt/clang-cross/bin/
+          #      			chmod +x "/opt/clang-cross/bin/${TARGET}-${n}"
+          #  		fi
+        	#	done
 		# 3. Aggressively ensure Clang is dead and GCC is the captain
-		rm -f "/opt/clang-cross/bin/${TARGET}-cc"
-		rm -f "/opt/clang-cross/bin/${TARGET}-c++"
-		ln -sf "${TARGET}-gcc" "/opt/clang-cross/bin/${TARGET}-cc"
-		ln -sf "${TARGET}-g++" "/opt/clang-cross/bin/${TARGET}-c++"
+	#	rm -f "/opt/clang-cross/bin/${TARGET}-cc"
+	#	rm -f "/opt/clang-cross/bin/${TARGET}-c++"
+	#	ln -sf "${TARGET}-gcc" "/opt/clang-cross/bin/${TARGET}-cc"
+	#	ln -sf "${TARGET}-g++" "/opt/clang-cross/bin/${TARGET}-c++"
 		# Also wrap clang/clang++ to invoke gcc/g++ so scripts that
 		# hardcode 'clang'/'clang++' instead of 'cc'/'c++' still work
-		cat > "/opt/clang-cross/bin/${TARGET}-clang" <<EOF
-#!/bin/sh
-BINDIR=\$(dirname "\$0")
-exec "\${BINDIR}/${TARGET}-gcc" "\$@"
-EOF
-		chmod +x "/opt/clang-cross/bin/${TARGET}-clang"
-		cat > "/opt/clang-cross/bin/${TARGET}-clang++" <<EOF
-#!/bin/sh
-BINDIR=\$(dirname "\$0")
-exec "\${BINDIR}/${TARGET}-g++" "\$@"
-EOF
-		chmod +x "/opt/clang-cross/bin/${TARGET}-clang++"
-        		;;
-	esac
+#		cat > "/opt/clang-cross/bin/${TARGET}-clang" <<EOF
+##!/bin/sh
+#BINDIR=\$(dirname "\$0")
+#exec "\${BINDIR}/${TARGET}-gcc" "\$@"
+#EOF
+#		chmod +x "/opt/clang-cross/bin/${TARGET}-clang"
+#		cat > "/opt/clang-cross/bin/${TARGET}-clang++" <<EOF
+##!/bin/sh
+#BINDIR=\$(dirname "\$0")
+#exec "\${BINDIR}/${TARGET}-g++" "\$@"
+#EOF
+#		chmod +x "/opt/clang-cross/bin/${TARGET}-clang++"
+#        		;;
+#	esac
 
 	sudo find /opt/clang-cross ! -type l -exec chmod -w {} + || true
 	rm -rf "${TARGET}"
