@@ -1,1 +1,1 @@
-CLANG_ARGS="-march=m68020 -mhard-float"
+CLANG_ARGS=""
