@@ -192,7 +192,7 @@ jobs:
         id: llvm-hash
         run: 'echo "hash=$(git rev-parse HEAD:llvm)" >> $GITHUB_OUTPUT'
       - name: Download
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: clang-cross.tar.xz
       - name: Cache musl-cross tarball
@@ -250,7 +250,8 @@ jobs:
           for i in release/*.sha256; do
             echo "| $(basename $i .sha256) | $(cat $i) |" >> RELEASE.md
           done
-      - if: '${{ inputs.release_name != '''' && inputs.make_release }}'
+      - if: '${{ inputs.release_name != '''' && inputs.make_release == ''yes'' }}
+      #- if: '${{ inputs.release_name != '''' && inputs.make_release }}'
         name: Create Release
         uses: xiechangan123/action-gh-release@master
         with:
@@ -262,7 +263,8 @@ jobs:
           make_latest: true
           files: release/*-*-*.tar.*
           body_path: RELEASE.md
-      - name: Finalize Release
+      - if: '${{ inputs.release_name != '''' && inputs.make_release == ''yes'' }}'
+        name: Finalize Release
         env:
           GH_TOKEN: '${{ secrets.GITHUB_TOKEN }}'
         run: |

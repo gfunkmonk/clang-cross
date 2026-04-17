@@ -111,16 +111,15 @@ build_target() {
 			;;
 	esac
 	downloaded=false
-	mkdir -p "${TARGET}"
-	for n in {0..9}; do
-# OPTIMIZATION: Use --retry for wget to handle flaky network connections
-		if wget --retry-connrefused --waitretry=5 --read-timeout=20 --timeout=15 --tries=5 -O - "${URL}" | tar xJ -C "${TARGET}" --strip-components=1; then
-    			downloaded=true
-    			break
-		fi
-		rm -rf "${TARGET}"
-		sleep 5
-	done
+          for n in {0..9}; do
+              mkdir -p "${TARGET}"
+              if wget --retry-connrefused --waitretry=5 --read-timeout=20 --timeout=15 --tries=5 -O - "${URL}" | tar xJ -C "${TARGET}" --strip-components=1; then
+                  downloaded=true
+                  break
+              fi
+              rm -rf "${TARGET}"
+              sleep 5
+          done
 	if [ "${downloaded}" = "false" ]; then
 		echo "ERROR: Failed to download ${URL} after 10 attempts" >&2
 		exit 1
@@ -164,43 +163,25 @@ EOF
         chmod +x "/opt/clang-cross/bin/${wrapper_name}"
     done
 	# For targets with no LLVM backend, install GCC binaries instead of clang wrappers
-	#case ${TARGET} in
-    	#	sh4-*|or1k-*)
-        		# 1. Remove the clang wrappers because this Clang build doesn't support these CPUs
-        	#	rm -f /opt/clang-cross/bin/${TARGET}-clang
-        	#	rm -f /opt/clang-cross/bin/${TARGET}-clang++
-        	#	rm -f /opt/clang-cross/bin/${TARGET}-cpp
-	        	# 2. Copy the real GCC binaries from the extracted musl-cross tarball
-        		# Assuming you used: tar xJ -C "${TARGET}" --strip-components=1
-        	#	for n in gcc g++ cpp ar nm objcopy objdump ranlib strip; do
-            		# The binaries are now directly in ${TARGET}/bin/ due to --strip-components=1
-          #  		bin_source="${TARGET}/bin/${TARGET}-${n}"
-          #  		if [ -f "$bin_source" ]; then
-          #      			cp "$bin_source" /opt/clang-cross/bin/
-          #      			chmod +x "/opt/clang-cross/bin/${TARGET}-${n}"
-          #  		fi
-        	#	done
-		# 3. Aggressively ensure Clang is dead and GCC is the captain
-	#	rm -f "/opt/clang-cross/bin/${TARGET}-cc"
-	#	rm -f "/opt/clang-cross/bin/${TARGET}-c++"
-	#	ln -sf "${TARGET}-gcc" "/opt/clang-cross/bin/${TARGET}-cc"
-	#	ln -sf "${TARGET}-g++" "/opt/clang-cross/bin/${TARGET}-c++"
-		# Also wrap clang/clang++ to invoke gcc/g++ so scripts that
-		# hardcode 'clang'/'clang++' instead of 'cc'/'c++' still work
-#		cat > "/opt/clang-cross/bin/${TARGET}-clang" <<EOF
-##!/bin/sh
-#BINDIR=\$(dirname "\$0")
-#exec "\${BINDIR}/${TARGET}-gcc" "\$@"
-#EOF
-#		chmod +x "/opt/clang-cross/bin/${TARGET}-clang"
-#		cat > "/opt/clang-cross/bin/${TARGET}-clang++" <<EOF
-##!/bin/sh
-#BINDIR=\$(dirname "\$0")
-#exec "\${BINDIR}/${TARGET}-g++" "\$@"
-#EOF
-#		chmod +x "/opt/clang-cross/bin/${TARGET}-clang++"
-#        		;;
-#	esac
+          #case ${TARGET} in
+	#	sh4-*|or1k-*)
+	#		echo "==> Architecture ${TARGET} requires GCC backend fallback..."
+	#		for n in gcc g++ cpp ar nm objcopy objdump ranlib strip; do
+	#			cp "/opt/clang-cross/bin/${TARGET}-${n}" .
+	#		done
+			# Override aliases to point to GCC
+	#		ln -sf "${TARGET}-gcc" "${TARGET}-cc"
+	#		ln -sf "${TARGET}-g++" "${TARGET}-c++"
+			# Mock Clang to call GCC
+	#		for c in clang clang++; do
+	#			cat <<-EOF > "${TARGET}-${c}"
+					#!/bin/sh
+	#				exec "\$(dirname "\$0")/${TARGET}-${c/clang/gc}" "\$@"
+	#			EOF
+	#			chmod +x "${TARGET}-${c}"
+	#		done
+	#		;;
+	#esac
 
 	sudo find /opt/clang-cross ! -type l -exec chmod -w {} + || true
 	rm -rf "${TARGET}"
