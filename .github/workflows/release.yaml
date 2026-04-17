@@ -18,6 +18,12 @@ name: Release
         required: true
         type: boolean
         default: false
+      swapsize:
+        description: Swap Size (in gb)
+        type: choice
+        required: false
+        options: [3, 5, 10]
+        default: 5
       sshserver:
         description: Run SSH Server before build
         required: true
@@ -58,7 +64,7 @@ jobs:
         name: Add Swap Space for Build
         uses: pierotofy/set-swap-space@master
         with:
-          swap-size-gb: 3
+          swap-size-gb: '${{ inputs.swapsize }}
       - name: Checkout
         uses: actions/checkout@v6
         with:
