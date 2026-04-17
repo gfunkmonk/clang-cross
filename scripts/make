@@ -16,7 +16,7 @@ CT_VER=twolittleendian
 GF_URL="https://github.com/gfunkmonk"
 GF_VER=farmer
 
-LLVM_TARGETS="AArch64;ARM;LoongArch;Mips;PowerPC;RISCV;SystemZ;X86;Lanai;Sparc;M68k;SuperH"
+LLVM_TARGETS="AArch64;ARM;LoongArch;Mips;PowerPC;RISCV;SystemZ;X86;Lanai;Sparc;M68k;OR1K;SuperH"
 LLVM_EXPERIMENTAL_TARGETS_TO_BUILD="M68k"
 
 install_packages() {
@@ -38,6 +38,10 @@ install_packages() {
 build_llvm() {
 	sudo mkdir -p /opt
 	sudo chmod 0777 /opt
+	# Patch OR1K CMakeLists.txt to add missing component group declaration
+	# (required by LLVM-Build.cmake which queries cmake TARGET "OR1K")
+	grep -q "add_llvm_component_group(OR1K)" llvm/llvm/lib/Target/OR1K/CMakeLists.txt || \
+		sed -i '1s/^/add_llvm_component_group(OR1K)\n/' llvm/llvm/lib/Target/OR1K/CMakeLists.txt
 	mkdir -p build-llvm
 	pushd build-llvm
 	cmake -G Ninja -S ../llvm/llvm \
