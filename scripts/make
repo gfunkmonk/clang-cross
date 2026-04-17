@@ -76,6 +76,8 @@ build_llvm() {
 		-DLIBCXX_HAS_MUSL_LIBC=ON \
 		-DBUILD_SHARED_LIBS=OFF \
 		-DLLVM_BUILD_LLVM_DYLIB=OFF \
+                    -DCMAKE_CXX_FLAGS="-Wdangling-pointer=0 -Wno-enum-compare -Wno-dangling-reference -Wno-free-nonheap-object" \
+                    -DCMAKE_C_FLAGS="-Wdangling-pointer=0 -Wno-enum-compare -Wno-dangling-reference -Wno-free-nonheap-object" \
 		-DLLVM_ENABLE_RUNTIMES="compiler-rt;libcxx;libcxxabi;libunwind"
 	ninja install/strip
 	popd

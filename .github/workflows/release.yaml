@@ -141,47 +141,142 @@ jobs:
           path: clang-cross.tar.xz
           if-no-files-found: error
           retention-days: 1
-  build-targets:
-    name: Build Targets
+  build-gnu-targets:
+    name: Build GNU Targets
     runs-on: ubuntu-24.04
     needs: build-llvm
+    if: inputs.libc == 'gnu'
     strategy:
       fail-fast: false
       matrix:
         target:
-          - aarch64-unknown-linux-${{ github.event.inputs.libc }}
-          - aarch64_be-unknown-linux-${{ github.event.inputs.libc }}
-          - arm-unknown-linux-${{ github.event.inputs.libc }}eabi
-          - arm-unknown-linux-${{ github.event.inputs.libc }}eabihf
-          - armv5-unknown-linux-${{ github.event.inputs.libc }}eabi
-          - armv6-unknown-linux-${{ github.event.inputs.libc }}eabi
-          - armv6-unknown-linux-${{ github.event.inputs.libc }}eabihf
-          - armv7-unknown-linux-${{ github.event.inputs.libc }}eabi
-          - armv7-unknown-linux-${{ github.event.inputs.libc }}eabihf
-          - i386-unknown-linux-${{ github.event.inputs.libc }}
-          - i486-unknown-linux-${{ github.event.inputs.libc }}
-          - i586-unknown-linux-${{ github.event.inputs.libc }}
-          - i686-unknown-linux-${{ github.event.inputs.libc }}
-          - loongarch64-unknown-linux-${{ github.event.inputs.libc }}
-          - mips64el-unknown-linux-${{ github.event.inputs.libc }}
-          - mips64-unknown-linux-${{ github.event.inputs.libc }}
-          - mipsel-unknown-linux-${{ github.event.inputs.libc }}
-          - mipsel-unknown-linux-${{ github.event.inputs.libc }}sf
-          - mips-unknown-linux-${{ github.event.inputs.libc }}
-          - mips-unknown-linux-${{ github.event.inputs.libc }}sf
-          - m68k-unknown-linux-${{ github.event.inputs.libc }}
-          - or1k-unknown-linux-${{ github.event.inputs.libc }}
-          - powerpc64le-unknown-linux-${{ github.event.inputs.libc }}
-          - powerpc64-unknown-linux-${{ github.event.inputs.libc }}
-          - powerpcle-unknown-linux-${{ github.event.inputs.libc }}
-          - powerpcle-unknown-linux-${{ github.event.inputs.libc }}sf
-          - powerpc-unknown-linux-${{ github.event.inputs.libc }}
-          - powerpc-unknown-linux-${{ github.event.inputs.libc }}sf
-          - riscv32-unknown-linux-${{ github.event.inputs.libc }}
-          - riscv64-unknown-linux-${{ github.event.inputs.libc }}
-          - s390x-ibm-linux-${{ github.event.inputs.libc }}
-          - sh4-multilib-linux-${{ github.event.inputs.libc }}
-          - x86_64-unknown-linux-${{ github.event.inputs.libc }}
+          - aarch64-unknown-linux-gnu
+          - aarch64_be-unknown-linux-gnu
+          - alphaev56-unknown-linux-gnu
+          - alphaev67-unknown-linux-gnu
+          - arm-unknown-linux-gnueabi
+          - arm-unknown-linux-gnueabihf
+          - armv4t-unknown-linux-gnueabi
+          - armv5-unknown-linux-gnueabi
+          - armv6-unknown-linux-gnueabi
+          - armv6-unknown-linux-gnueabihf
+          - armv7-unknown-linux-gnueabi
+          - armv7-unknown-linux-gnueabihf
+          - hppa-unknown-linux-gnu
+          - i486-unknown-linux-gnu
+          - i586-unknown-linux-gnu
+          - i686-unknown-linux-gnu
+          - loongarch64-unknown-linux-gnu
+          - m68k-unknown-linux-gnu
+          - microblaze-xilinx-linux-gnu
+          - microblazeel-xilinx-linux-gnu
+          - mips-unknown-linux-gnu
+          - mips-unknown-linux-gnusf
+          - mips64-unknown-linux-gnu
+          - mips64el-unknown-linux-gnu
+          - mipsel-unknown-linux-gnu
+          - mipsel-unknown-linux-gnusf
+          - or1k-unknown-linux-gnu
+          - powerpc-unknown-linux-gnu
+          - powerpc-unknown-linux-gnusf
+          - powerpc64-unknown-linux-gnu
+          - powerpc64le-unknown-linux-gnu
+          - powerpcle-unknown-linux-gnu
+          - powerpcle-unknown-linux-gnusf
+          - riscv32-unknown-linux-gnu
+          - riscv64-unknown-linux-gnu
+          - s390-ibm-linux-gnu
+          - s390x-ibm-linux-gnu
+          - sh4-multilib-linux-gnu
+          - sparc-unknown-linux-gnu
+          - sparc64-unknown-linux-gnu
+          - x86_64-unknown-linux-gnu
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 1
+          submodules: true
+      - name: Get LLVM hash
+        id: llvm-hash
+        run: 'echo "hash=$(git rev-parse HEAD:llvm)" >> $GITHUB_OUTPUT'
+      - name: Download
+        uses: actions/download-artifact@v8
+        with:
+          name: clang-cross.tar.xz
+      - name: Cache musl-cross tarball
+        uses: actions/cache@v5
+        id: cache-target
+        with:
+          path: |
+            ${{ matrix.target }}.tar.xz
+            ${{ matrix.target }}.tar.xz.sha256
+          key: 'target-${{ matrix.target }}-${{ steps.llvm-hash.outputs.hash }}'
+      - name: Build el Target
+        if: steps.cache-target.outputs.cache-hit != 'true'
+        run: |
+          sudo rm -rf /opt/clang-cross
+          chmod +x ./scripts/make
+          bash ./scripts/make ${{ matrix.target }}
+      - name: Upload package
+        uses: actions/upload-artifact@v7
+        with:
+          name: '${{ matrix.target }}.tar.xz'
+          path: '${{ matrix.target }}.tar.xz'
+          if-no-files-found: error
+          retention-days: 1
+      - name: Upload checksum
+        uses: actions/upload-artifact@v7
+        with:
+          name: '${{ matrix.target }}.tar.xz.sha256'
+          path: '${{ matrix.target }}.tar.xz.sha256'
+          if-no-files-found: error
+          retention-days: 1
+  build-musl-targets:
+    name: Build MUSL Targets
+    runs-on: ubuntu-24.04
+    needs: build-llvm
+    if: inputs.libc == 'musl'
+    strategy:
+      fail-fast: false
+      matrix:
+        target:
+          - aarch64-unknown-linux-musl
+          - aarch64_be-unknown-linux-musl
+          - arm-unknown-linux-musleabi
+          - arm-unknown-linux-musleabihf
+          - armv5-unknown-linux-musleabi
+          - armv6-unknown-linux-musleabi
+          - armv6-unknown-linux-musleabihf
+          - armv7-unknown-linux-musleabi
+          - armv7-unknown-linux-musleabihf
+          - i386-unknown-linux-musl
+          - i486-unknown-linux-musl
+          - i586-unknown-linux-musl
+          - i686-unknown-linux-musl
+          - loongarch64-unknown-linux-musl
+          - m68k-unknown-linux-musl
+          - microblaze-xilinx-linux-musl
+          - microblazeel-xilinx-linux-musl
+          - mips-unknown-linux-musl
+          - mips-unknown-linux-muslsf
+          - mips64-unknown-linux-musl
+          - mips64el-unknown-linux-musl
+          - mipsel-unknown-linux-musl
+          - mipsel-unknown-linux-muslsf
+          - or1k-unknown-linux-musl
+          - powerpc-unknown-linux-musl
+          - powerpc-unknown-linux-muslsf
+          - powerpc64-unknown-linux-musl
+          - powerpc64le-unknown-linux-musl
+          - powerpcle-unknown-linux-musl
+          - powerpcle-unknown-linux-muslsf
+          - riscv32-unknown-linux-musl
+          - riscv64-unknown-linux-musl
+          - s390-ibm-linux-musl
+          - s390x-ibm-linux-musl
+          - sh4-multilib-linux-musl
+          - x86_64-unknown-linux-musl
     steps:
       - name: Checkout
         uses: actions/checkout@v6
@@ -227,7 +322,8 @@ jobs:
     name: Release
     runs-on: ubuntu-slim
     needs:
-      - build-targets
+      - build-gnu-targets
+      - build-musl-targets
     if: |
       !cancelled() && github.event.inputs.make_release == 'yes'
     permissions:
@@ -270,4 +366,4 @@ jobs:
         run: |
           # The action-gh-release step above handles most files,
           # but this ensures the body/notes are updated correctly.
-          gh release edit "${{ inputs.release_name }}" --notes-file RELEASE.md
+          gh release edit "${{ inputs.release_name }}" --notes-file RELEASE.md	
