@@ -1,0 +1,1 @@
+CLANG_ARGS="-march=armv6kz -mfloat-abi=soft"
