@@ -67,7 +67,7 @@ jobs:
           key: 'clang-cross-${{ steps.llvm-hash.outputs.hash }}'
       - name: CCACHE Env Variables
         if: steps.cache-llvm.outputs.cache-hit != 'true'
-        run: >
+        run: |
           DEBIAN_FRONTEND=noninteractive sudo apt-get -y update
 
           DEBIAN_FRONTEND=noninteractive sudo apt-get -y install apt-utils ccache ca-certificates gpg wget
@@ -107,7 +107,7 @@ jobs:
           verbose: 2
           save: true
       - name: Enable Kitware Repository
-        run: >
+        run: |
           test -f /usr/share/doc/kitware-archive-keyring/copyright || wget -O -
           https://apt.kitware.com/keys/kitware-archive-latest.asc 2>/dev/null |
           gpg --dearmor - | sudo tee
