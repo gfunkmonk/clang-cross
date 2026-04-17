@@ -11,15 +11,15 @@ REPODIR="$(dirname "$SCRIPT_DIR")"
 # Ensure we can find the targets directory relative to the repo root
 TARGETS_DIR="${REPODIR}/targets"
 
-CT_URL="https://github.com/cross-tools"
-CT_VER=20250929
+CT_URL="https://github.com/gfunkmonk"
+CT_VER=onelittleendian
 GF_URL="https://github.com/gfunkmonk"
 GF_VER=ladder
 
 #LLVM_TARGETS="AArch64;ARM;LoongArch;Mips;PowerPC;RISCV;SystemZ;X86;DirectX;SPIRV"
 #LLVM_EXPERIMENTAL_TARGETS_TO_BUILD="M68k;SH4;OR1K"
 
-LLVM_TARGETS="AArch64;ARM;LoongArch;Mips;PowerPC;RISCV;SystemZ;X86;Lanai;Sparc;M68k"
+LLVM_TARGETS="AArch64;AArch64_be;ARM;LoongArch;Mips;PowerPC;RISCV;SystemZ;X86;Lanai;Sparc;M68k"
 LLVM_EXPERIMENTAL_TARGETS_TO_BUILD="M68k"
 
 install_packages() {
