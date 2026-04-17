@@ -164,7 +164,6 @@ jobs:
           - i486-unknown-linux-gnu
           - i586-unknown-linux-gnu
           - i686-unknown-linux-gnu
-          - loongarch32-unknown-linux-gnu
           - loongarch64-unknown-linux-gnu
           - m68k-unknown-linux-gnu
           - microblaze-xilinx-linux-gnu
