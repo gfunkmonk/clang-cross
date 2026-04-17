@@ -16,7 +16,7 @@ CT_VER=twolittleendian
 GF_URL="https://github.com/gfunkmonk"
 GF_VER=farmer
 
-LLVM_TARGETS="AArch64;ARM;LoongArch;Mips;PowerPC;RISCV;SystemZ;X86;Lanai;Sparc;M68k;OR1K;SuperH"
+LLVM_TARGETS="AArch64;ARM;LoongArch;Mips;PowerPC;RISCV;SystemZ;X86;Sparc;M68k;OR1K;SuperH"
 LLVM_EXPERIMENTAL_TARGETS_TO_BUILD="M68k"
 
 install_packages() {
