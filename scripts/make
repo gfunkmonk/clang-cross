@@ -16,8 +16,8 @@ CT_VER=twolittleendian
 GF_URL="https://github.com/gfunkmonk"
 GF_VER=farmer
 
-LLVM_TARGETS="AArch64;ARM;LoongArch;Mips;PowerPC;RISCV;SystemZ;X86;Lanai;Sparc;M68k;OR1K;SuperH"
-#LLVM_EXPERIMENTAL_TARGETS_TO_BUILD="M68k"
+LLVM_TARGETS="AArch64;ARM;LoongArch;Mips;PowerPC;RISCV;SystemZ;X86;Lanai;Sparc;M68k;SuperH"
+LLVM_EXPERIMENTAL_TARGETS_TO_BUILD="M68k"
 
 install_packages() {
 	sudo apt-get update
@@ -70,6 +70,10 @@ build_llvm() {
 		-DLLVM_LINK_LLVM_DYLIB=OFF \
 		-DLLVM_USE_SPLIT_DWARF=ON \
 		-DLLVM_PARALLEL_LINK_JOBS=1 \
+		-DLLVM_ENABLE_RUNTIMES="compiler-rt;libcxx;libcxxabi;libunwind" \
+		-DLLVM_ENABLE_ASSERTIONS=OFF \
+		-DLLVM_OPTIMIZED_TABLEGEN=ON \
+		-DLIBCXX_HAS_MUSL_LIBC=ON \
 	ninja install/strip
 	popd
 
