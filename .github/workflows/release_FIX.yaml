@@ -250,8 +250,8 @@ jobs:
           for i in release/*.sha256; do
             echo "| $(basename $i .sha256) | $(cat $i) |" >> RELEASE.md
           done
-      - if: '${{ inputs.release_name != '''' && inputs.make_release == ''yes'' }}
       #- if: '${{ inputs.release_name != '''' && inputs.make_release }}'
+      - if: '${{ inputs.release_name != '''' && inputs.make_release == ''yes'' }}'
         name: Create Release
         uses: xiechangan123/action-gh-release@master
         with:
