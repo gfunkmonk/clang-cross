@@ -28,6 +28,7 @@ install_packages() {
 		cmake \
 		git \
 		libz-dev \
+		lld \
 		ninja-build \
 		python3 \
 		wget \
