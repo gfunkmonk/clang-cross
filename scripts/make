@@ -11,10 +11,9 @@ REPODIR="$(dirname "$SCRIPT_DIR")"
 # Ensure we can find the targets directory relative to the repo root
 TARGETS_DIR="${REPODIR}/targets"
 
-CT_URL="https://github.com/gfunkmonk"
-CT_VER=twolittleendian
-GF_URL="https://github.com/gfunkmonk"
-GF_VER=farmer
+GIT_URL="https://github.com/gfunkmonk"
+GNU_REL=gnutella
+MUSL_REL=airport
 
 LLVM_TARGETS="AArch64;ARM;LoongArch;Mips;PowerPC;RISCV;SystemZ;X86;Sparc;M68k"
 LLVM_EXPERIMENTAL_TARGETS_TO_BUILD="M68k"
@@ -102,10 +101,10 @@ build_target() {
 	sudo chown -R $(id -u):$(id -g) /opt/clang-cross
 	case ${TARGET} in
 		*gnu*)
-			URL="${CT_URL}/gnu-cross/releases/download/${CT_VER}/${TARGET}.tar.xz"
+			URL="${GIT_URL}/gnu-cross/releases/download/${GNU_REL}/${TARGET}.tar.xz"
 			;;
 		*musl*)
-			URL="${GF_URL}/musl-cross/releases/download/${GF_VER}/${TARGET}.tar.xz"
+			URL="${GIT_URL}/musl-cross/releases/download/${MUSL_REL}/${TARGET}.tar.xz"
 			;;
 	esac
 	downloaded=false
