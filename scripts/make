@@ -32,7 +32,8 @@ install_packages() {
 		ninja-build \
 		python3 \
 		wget \
-		xz-utils
+		xz-utils \
+		zstd
 }
 
 build_llvm() {

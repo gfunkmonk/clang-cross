@@ -82,7 +82,7 @@ jobs:
         run: |
           DEBIAN_FRONTEND=noninteractive sudo apt-get -y update
 
-          DEBIAN_FRONTEND=noninteractive sudo apt-get -y install apt-utils ccache ca-certificates gpg wget
+          DEBIAN_FRONTEND=noninteractive sudo apt-get -y install apt-utils ccache ca-certificates gpg wget zstd
 
           cat >> $GITHUB_ENV << 'EOF'
           CCACHE_SLOPPINESS=file_macro,locale,time_macros
@@ -354,7 +354,7 @@ jobs:
           make_latest: true
           files: release/*-*-*.tar.*
           body_path: RELEASE.md
-      - if: '${{ inputs.release_name != '''' && inputs.make_release == ''yes'' }}'
+      - if: '${{ inputs.release_name != '''' && inputs.make_release }}'
         name: Finalize Release
         env:
           GH_TOKEN: '${{ secrets.GITHUB_TOKEN }}'
