@@ -164,7 +164,11 @@ EOF
 		sh4-*|or1k-*)
 			echo "==> Architecture ${TARGET} requires GCC backend fallback..."
 			for n in gcc g++ cpp ar nm objcopy objdump ranlib strip; do
-				cp "/opt/clang-cross/bin/${TARGET}-${n}" .
+                              bin_source="${TARGET}/bin/${TARGET}-${n}"
+                              if [ -f "$bin_source" ]; then
+                                 cp "$bin_source" /opt/clang-cross/bin/
+                                 chmod +x "/opt/clang-cross/bin/${TARGET}-${n}"
+                              fi
 			done
 			# Override aliases to point to GCC
 			ln -sf "${TARGET}-gcc" "${TARGET}-cc"
