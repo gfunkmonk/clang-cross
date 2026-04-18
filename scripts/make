@@ -32,7 +32,7 @@ install_packages() {
 		python3 \
 		wget \
 		xz-utils \
-		zstd
+		libzstd-dev
 }
 
 build_llvm() {
