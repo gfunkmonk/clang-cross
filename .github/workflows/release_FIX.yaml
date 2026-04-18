@@ -169,8 +169,8 @@ jobs:
           #- mipsel-unknown-linux-${{ github.event.inputs.libc }}sf
           #- mips-unknown-linux-${{ github.event.inputs.libc }}
           #- mips-unknown-linux-${{ github.event.inputs.libc }}sf
-          - m68k-unknown-linux-${{ github.event.inputs.libc }}
-          - or1k-unknown-linux-${{ github.event.inputs.libc }}
+          #- m68k-unknown-linux-${{ github.event.inputs.libc }}
+          #- or1k-unknown-linux-${{ github.event.inputs.libc }}
           #- powerpc64le-unknown-linux-${{ github.event.inputs.libc }}
           #- powerpc64-unknown-linux-${{ github.event.inputs.libc }}
           #- powerpcle-unknown-linux-${{ github.event.inputs.libc }}
@@ -180,8 +180,8 @@ jobs:
           #- riscv32-unknown-linux-${{ github.event.inputs.libc }}
           #- riscv64-unknown-linux-${{ github.event.inputs.libc }}
           #- s390x-ibm-linux-${{ github.event.inputs.libc }}
-          - sh4-multilib-linux-${{ github.event.inputs.libc }}
-          #- x86_64-unknown-linux-${{ github.event.inputs.libc }}
+          #- sh4-multilib-linux-${{ github.event.inputs.libc }}
+          - x86_64-unknown-linux-${{ github.event.inputs.libc }}
     steps:
       - name: Checkout
         uses: actions/checkout@v6
