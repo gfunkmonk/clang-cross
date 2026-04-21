@@ -12,8 +12,8 @@ REPODIR="$(dirname "$SCRIPT_DIR")"
 TARGETS_DIR="${REPODIR}/targets"
 
 GIT_URL="https://github.com/gfunkmonk"
-GNU_REL=gnutella
-MUSL_REL=airport
+GNU_REL=gnuewt
+MUSL_REL=birthday
 
 LLVM_TARGETS="AArch64;ARM;LoongArch;Mips;PowerPC;RISCV;SystemZ;X86;Sparc;M68k"
 LLVM_EXPERIMENTAL_TARGETS_TO_BUILD="M68k"
