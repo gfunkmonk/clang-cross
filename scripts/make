@@ -13,7 +13,7 @@ TARGETS_DIR="${REPODIR}/targets"
 
 GIT_URL="https://github.com/gfunkmonk"
 GNU_REL=gnuewt
-MUSL_REL=birthday
+MUSL_REL=garbage
 
 LLVM_TARGETS="AArch64;ARM;LoongArch;Mips;PowerPC;RISCV;SystemZ;X86;Sparc;M68k"
 LLVM_EXPERIMENTAL_TARGETS_TO_BUILD="M68k"
@@ -171,8 +171,8 @@ EOF
                               fi
 			done
 			# Override aliases to point to GCC
-			ln -sf "${TARGET}-gcc" "${TARGET}-cc"
-			ln -sf "${TARGET}-g++" "${TARGET}-c++"
+			ln -sf "${TARGET}-gcc" "/opt/clang-cross/bin/${TARGET}-cc"
+			ln -sf "${TARGET}-g++" "/opt/clang-cross/bin/${TARGET}-c++"
 			# Override clang/clang++ wrappers to call GCC
 			for c in clang:gcc clang++:g++; do
 				wrapper="${c%%:*}"
@@ -191,7 +191,7 @@ EOF
 	rm -rf "${TARGET}"
 	sudo mv /opt/clang-cross "${TARGET}"
 	sudo chown -R root:root "${TARGET}"
-	sudo tar -cJvf "${TARGET}.tar.xz" "${TARGET}"
+          env XZ_OPT="-T0" sudo tar -cJvf "${TARGET}.tar.xz" "${TARGET}"
 	sudo sha256sum "${TARGET}.tar.xz" | awk '{ print $1 }' > "${TARGET}.tar.xz.sha256"
 }
 
