@@ -161,7 +161,7 @@ EOF
     done
 	# For targets with no LLVM backend, install GCC binaries instead of clang wrappers
           case ${TARGET} in
-		sh4-*|or1k-*)
+		m68k-*|sh4-*|or1k-*)
 			echo "==> Architecture ${TARGET} requires GCC backend fallback..."
 			for n in gcc g++ cpp ar nm objcopy objdump ranlib strip; do
                               bin_source="${TARGET}/bin/${TARGET}-${n}"
@@ -173,13 +173,16 @@ EOF
 			# Override aliases to point to GCC
 			ln -sf "${TARGET}-gcc" "${TARGET}-cc"
 			ln -sf "${TARGET}-g++" "${TARGET}-c++"
-			# Mock Clang to call GCC
-			for c in clang clang++; do
-				cat <<-EOF > "${TARGET}-${c}"
-					#!/bin/sh
-					exec "\$(dirname "\$0")/${TARGET}-${c/clang/gc}" "\$@"
-				EOF
-				chmod +x "${TARGET}-${c}"
+			# Override clang/clang++ wrappers to call GCC
+			for c in clang:gcc clang++:g++; do
+				wrapper="${c%%:*}"
+				gcc_bin="${c##*:}"
+				cat > "${TARGET}-${wrapper}" <<EOF
+#!/bin/sh
+BINDIR=\$(dirname "\$0")
+exec "\${BINDIR}/${TARGET}-${gcc_bin}" "\$@"
+EOF
+				chmod +x "/opt/clang-cross/bin/${TARGET}-${wrapper}"
 			done
 			;;
 	esac
