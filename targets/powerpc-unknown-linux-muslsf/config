@@ -1,1 +1,1 @@
-CLANG_ARGS="-mpowerpc -msoft-float"
+CLANG_ARGS="-mfloat-abi=soft"

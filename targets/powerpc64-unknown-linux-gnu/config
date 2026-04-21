@@ -1,1 +1,1 @@
-CLANG_ARGS="-mpowerpc64 -mabi=elfv2"
+CLANG_ARGS=""

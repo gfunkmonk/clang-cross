@@ -1,1 +1,1 @@
-CLANG_ARGS="-march=68020"
+CLANG_ARGS=""
