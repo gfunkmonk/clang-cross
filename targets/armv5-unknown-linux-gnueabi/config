@@ -1,1 +1,1 @@
-CLANG_ARGS="-march=armv5te -mfloat-abi=soft"
+CLANG_ARGS="-mfloat-abi=soft"

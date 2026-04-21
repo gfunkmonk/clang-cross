@@ -1,1 +1,1 @@
-CLANG_ARGS="-march=armv6kz -mfloat-abi=hard -mfpu=vfp"
+CLANG_ARGS="-mfloat-abi=hard"

@@ -1,1 +1,1 @@
-CLANG_ARGS="-march=mips32 -mfloat-abi=soft"
+CLANG_ARGS="-mfloat-abi=soft"

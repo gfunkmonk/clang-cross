@@ -1,1 +1,1 @@
-CLANG_ARGS="-march=rv32gc"
+CLANG_ARGS=""

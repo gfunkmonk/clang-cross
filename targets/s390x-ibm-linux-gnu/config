@@ -1,1 +1,1 @@
-CLANG_ARGS="-march=z196"
+CLANG_ARGS=""

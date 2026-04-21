@@ -1,1 +1,1 @@
-CLANG_ARGS="-march=mips32"
+CLANG_ARGS=""

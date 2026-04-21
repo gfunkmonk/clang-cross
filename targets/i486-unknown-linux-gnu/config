@@ -1,1 +1,1 @@
-CLANG_ARGS="-march=i486"
+CLANG_ARGS=""
