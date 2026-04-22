@@ -188,7 +188,7 @@ build_target() {
 
 	# For targets with no LLVM backend, install GCC binaries instead of clang wrappers
 	case ${TARGET} in
-                sh4-*|or1k-*|microblaze*-*)
+	      sh4-*|or1k-*|m68k-*|microblaze-*|microblazeel-*)
                         echo "==> Architecture ${TARGET} using robust GCC fallback..."
 
 		    # DO NOT delete bin for fallbacks
