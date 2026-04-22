@@ -85,16 +85,16 @@ jobs:
           DEBIAN_FRONTEND=noninteractive sudo apt-get -y install apt-utils ccache ca-certificates gpg wget zstd
 
           cat >> $GITHUB_ENV << 'EOF'
-          CCACHE_SLOPPINESS=file_macro,locale,time_macros
+          CCACHE_SLOPPINESS=locale,time_macros,random_seed,file_macro,include_file_mtime,include_file_ctime,file_stat_matches,pch_defines,clang_index_store,include_file_ctime,ivfsoverlay,modules,system_headers
           CCACHE_NOHASHDIR=true
           CCACHE_COMPRESS=true
-          CCACHE_COMPRESSLEVEL=16
+          CCACHE_COMPRESSLEVEL=18
           CCACHE_NOFILECLONE=true
           CCACHE_NOHARDLINK=true
           CCACHE_INODECACHE=true
           CCACHE_NLEVELS=4
           CCACHE_COMPILERCHECK=content
-          CCACHE_DEPEND=true
+          CCACHE_DIRECT=true
           EOF
 
           # Setup CCACHE Dir
