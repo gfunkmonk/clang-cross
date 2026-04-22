@@ -146,6 +146,7 @@ EOF
     # 2. Setup standard aliases
     ln -sf "${TARGET}-clang" "/opt/clang-cross/bin/${TARGET}-cc"
     ln -sf "${TARGET}-clang++" "/opt/clang-cross/bin/${TARGET}-c++"
+    ln -sf "${TARGET}-clang" "/opt/clang-cross/bin/clang"
 
     # 3. Create LLVM tool wrappers (ar, nm, etc.)
     for n in ar:ar c++filt:cxxfilt nm:nm objcopy:objcopy objdump:objdump ranlib:ranlib size:size strings:strings strip:strip; do
@@ -161,39 +162,43 @@ EOF
     done
 	# For targets with no LLVM backend, install GCC binaries instead of clang wrappers
           case ${TARGET} in
-		sh4-*|or1k-*)
-			echo "==> Architecture ${TARGET} requires GCC backend fallback..."
-			#for n in gcc g++ cpp ar nm objcopy objdump ranlib strip; do
-                              #bin_source="${TARGET}/bin/${TARGET}-${n}"
-                              #if [ -f "$bin_source" ]; then
-                              #   cp "$bin_source" /opt/clang-cross/bin/
-                              #   chmod +x "/opt/clang-cross/bin/${TARGET}-${n}"
-                              #fi
-			#done
-                              for n in gcc g++ cpp ar nm objcopy objdump ranlib strip; do
-                                # Get the absolute path to the real GCC binary
-                                bin_source=$(realpath "${TARGET}/bin/${TARGET}-${n}")
-                                  if [ -f "$bin_source" ]; then
-                                    # Create a symbolic link instead of copying
-                                    ln -sf "$bin_source" "/opt/clang-cross/bin/${TARGET}-${n}"
-                                  fi
-                               done
-			# Override aliases to point to GCC
-			ln -sf "${TARGET}-gcc" "/opt/clang-cross/bin/${TARGET}-cc"
-			ln -sf "${TARGET}-g++" "/opt/clang-cross/bin/${TARGET}-c++"
-			# Override clang/clang++ wrappers to call GCC
-			for c in clang:gcc clang++:g++; do
-				wrapper="${c%%:*}"
-				gcc_bin="${c##*:}"
-				cat > "${TARGET}-${wrapper}" <<EOF
+              sh4-*|or1k-*|m68k-*)
+                  echo "==> Architecture ${TARGET} using robust GCC fallback..."
+        
+                  # 1. LINK the entire bin directory to keep internal components (cc1/cc1plus) relative
+                  # This solves the 'posix_spawnp' error.
+                  for n in gcc g++ cpp ar nm objcopy objdump ranlib strip; do
+                      bin_source=$(realpath "${TARGET}/bin/${TARGET}-${n}")
+                      [ -f "$bin_source" ] && ln -sf "$bin_source" "/opt/clang-cross/bin/${TARGET}-${n}"
+                  done
+
+                  # 2. Create a "Sanitizing" Wrapper
+                  # This wrapper strips --target and other Clang-specific flags before calling GCC
+                  for c in clang:gcc clang++:g++; do
+                      wrapper_name="${TARGET}-${c%%:*}"
+                      gcc_bin="${c##*:}"
+                      cat > "/opt/clang-cross/bin/${wrapper_name}" <<'EOF'
 #!/bin/sh
-BINDIR=\$(dirname "\$0")
-exec "\${BINDIR}/${TARGET}-${gcc_bin}" "\$@"
+BINDIR=$(dirname "$0")
+# Filter out Clang-specific flags that make GCC explode
+ARGS=""
+for arg in "$@"; do
+    case $arg in
+        --target=*|-target|--sysroot=*) continue ;; # Strip these
+        *) ARGS="$ARGS $arg" ;;
+    esac
+done
+exec "${BINDIR}/${TARGET}-gcc" $ARGS
 EOF
-				chmod +x "/opt/clang-cross/bin/${TARGET}-${wrapper}"
-			done
-			;;
-	esac
+            chmod +x "/opt/clang-cross/bin/${wrapper_name}"
+        done
+
+        # 3. MASK the host clang-22
+        # If the build system just calls 'clang', force it to our wrapper
+        ln -sf "${TARGET}-clang" "/opt/clang-cross/bin/clang"
+        ln -sf "${TARGET}-clang++" "/opt/clang-cross/bin/clang++"
+        ;;
+esac
 
 	sudo find /opt/clang-cross ! -type l -exec chmod -w {} + || true
 	rm -rf "${TARGET}"
