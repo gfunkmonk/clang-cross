@@ -233,7 +233,7 @@ build_target() {
  		   # Clang-named wrappers that call GCC, stripping clang-specific flags
  		   for c in clang:gcc clang++:g++ cpp:cpp; do
  		       create_wrapper "${TARGET}-${c%%:*}" "${TARGET}-${c##*:}" \
- 		           "--target=*|-target|--sysroot=*" "${CLANG_ARGS}"
+ 		           "--target=*|-target|--sysroot=*|-fcolor-diagnostics" "${CLANG_ARGS}"
 		   done
 
 		   # Mask host clang
