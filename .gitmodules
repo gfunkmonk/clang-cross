@@ -1,4 +1,4 @@
 [submodule "llvm"]
 	path = llvm
-	url = http://github.com/gfunkmonk/llvm-project
+	url = https://github.com/gfunkmonk/llvm-project
 	branch = test

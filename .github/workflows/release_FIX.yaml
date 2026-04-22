@@ -14,7 +14,7 @@ name: Release FIX
         type: boolean
         default: false
       swapspace:
-        description: Add Swap ̳Space
+        description: Add Swap
         required: true
         type: boolean
         default: false

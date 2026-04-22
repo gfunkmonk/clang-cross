@@ -36,11 +36,11 @@ install_packages() {
 }
 
 build_llvm() {
-          # BUG FIX: Ensure submodules are actually there
-          if [ ! -f "llvm/llvm/CMakeLists.txt" ]; then
-              echo "ERROR: LLVM source missing. Run: git submodule update --init --recursive" >&2
-              exit 1
-          fi
+	# Ensure submodules are actually there
+	if [ ! -f "llvm/llvm/CMakeLists.txt" ]; then
+		echo "ERROR: LLVM source missing. Run: git submodule update --init --recursive" >&2
+		exit 1
+	fi
 
 	sudo mkdir -p /opt
 	sudo chmod 0777 /opt
@@ -77,10 +77,10 @@ build_llvm() {
 	ninja install/strip
 	popd
 
-          # Check if install succeeded before wiping
-          if [ -d "/opt/clang-cross/bin" ]; then
-            rm -rf build-llvm
-          fi
+	# Check if install succeeded before wiping
+	if [ -d "/opt/clang-cross/bin" ]; then
+		rm -rf build-llvm
+	fi
 
 	sudo mv /opt/clang-cross .
 	sudo chown -R root:root clang-cross
@@ -88,17 +88,17 @@ build_llvm() {
 }
 
 build_target() {
-	TARGET=${1}
-          # Use the variable defined at the top of the script
-          if [ -f "${TARGETS_DIR}/${TARGET}/config" ]; then
-            . "${TARGETS_DIR}/${TARGET}/config"
-          else
-            echo "ERROR: Configuration for ${TARGET} not found in ${TARGETS_DIR}" >&2
-            exit 1
-          fi
+	TARGET="${1}"
+	# Use the variable defined at the top of the script
+	if [ -f "${TARGETS_DIR}/${TARGET}/config" ]; then
+		. "${TARGETS_DIR}/${TARGET}/config"
+	else
+		echo "ERROR: Configuration for ${TARGET} not found in ${TARGETS_DIR}" >&2
+		exit 1
+	fi
 
 	sudo tar -xf clang-cross.tar.xz -C /opt
-	sudo chown -R $(id -u):$(id -g) /opt/clang-cross
+	sudo chown -R "$(id -u):$(id -g)" /opt/clang-cross
 	case ${TARGET} in
 		*gnu*)
 			URL="${GIT_URL}/gnu-cross/releases/download/${GNU_REL}/${TARGET}.tar.xz"
@@ -108,15 +108,15 @@ build_target() {
 			;;
 	esac
 	downloaded=false
-          for n in {0..9}; do
-              mkdir -p "${TARGET}"
-              if wget --retry-connrefused --waitretry=5 --read-timeout=20 --timeout=15 --tries=5 -O - "${URL}" | tar xJ -C "${TARGET}" --strip-components=1; then
-                  downloaded=true
-                  break
-              fi
-              rm -rf "${TARGET}"
-              sleep 5
-          done
+	for n in $(seq 0 9); do
+		mkdir -p "${TARGET}"
+		if wget --retry-connrefused --waitretry=5 --read-timeout=20 --timeout=15 --tries=5 -O - "${URL}" | tar xJ -C "${TARGET}" --strip-components=1; then
+			downloaded=true
+			break
+		fi
+		rm -rf "${TARGET}"
+		sleep 5
+	done
 	if [ "${downloaded}" = "false" ]; then
 		echo "ERROR: Failed to download ${URL} after 10 attempts" >&2
 		exit 1
@@ -128,23 +128,34 @@ build_target() {
 	rm -rf "/opt/clang-cross/lib/gcc/${TARGET}"/*/{install-tools,plugin}
 	rm -rf "/opt/clang-cross/${TARGET}"/{bin,debug-root,lib}
 	# 1. Create Clang/LLVM-based wrappers with robust quoting
-          for c in clang:gcc clang++:g++; do
-              wrapper_name="${TARGET}-${c%%:*}"
-              gcc_bin="${c##*:}"
-              cat > "/opt/clang-cross/bin/${wrapper_name}" <<EOF
+	for c in clang:gcc clang++:g++; do
+		wrapper_name="${TARGET}-${c%%:*}"
+		gcc_bin="${c##*:}"
+		cat > "/opt/clang-cross/bin/${wrapper_name}" <<EOF
 #!/bin/sh
 BINDIR=\$(dirname "\$0")
 ARGS=""
 for arg in "\$@"; do
     case \$arg in
         --target=*|-target|--sysroot=*) continue ;;
-        *) ARGS="\$ARGS \$arg" ;;
+        *) ARGS="\$ARGS ${CLANG_ARGS} \$arg" ;;
     esac
 done
 exec "\${BINDIR}/${TARGET}-${gcc_bin}" \$ARGS
 EOF
-    chmod +x "/opt/clang-cross/bin/${wrapper_name}"
-done
+		chmod +x "/opt/clang-cross/bin/${wrapper_name}"
+	done
+
+	# 2. Setup standard aliases
+	ln -sf "${TARGET}-clang" "/opt/clang-cross/bin/${TARGET}-cc"
+	ln -sf "${TARGET}-clang++" "/opt/clang-cross/bin/${TARGET}-c++"
+	sudo rm -f "/opt/clang-cross/bin/clang"
+	ln -sf "${TARGET}-clang" "/opt/clang-cross/bin/clang"
+
+	# 3. Create LLVM tool wrappers (ar, nm, etc.)
+	for n in ar:ar c++filt:cxxfilt nm:nm objcopy:objcopy objdump:objdump ranlib:ranlib size:size strings:strings strip:strip; do
+		wrapper_name="${TARGET}-${n%%:*}"
+		llvm_tool="llvm-${n##*:}"
 
     # 2. Setup standard aliases
     ln -sf "${TARGET}-clang" "/opt/clang-cross/bin/${TARGET}-cc"
@@ -162,53 +173,54 @@ done
 BINDIR=\$(dirname "\$0")
 exec "\${BINDIR}/${llvm_tool}" "\$@"
 EOF
-        chmod +x "/opt/clang-cross/bin/${wrapper_name}"
-    done
-	# For targets with no LLVM backend, install GCC binaries instead of clang wrappers
-          case ${TARGET} in
-              sh4-*|or1k-*|m68k-*)
-                  echo "==> Architecture ${TARGET} using robust GCC fallback..."
-        
-                  # 1. LINK the entire bin directory to keep internal components (cc1/cc1plus) relative
-                  # This solves the 'posix_spawnp' error.
-                  for n in gcc g++ cpp ar nm objcopy objdump ranlib strip; do
-                      bin_source=$(realpath "${TARGET}/bin/${TARGET}-${n}")
-                      [ -f "$bin_source" ] && ln -sf "$bin_source" "/opt/clang-cross/bin/${TARGET}-${n}"
-                  done
+		chmod +x "/opt/clang-cross/bin/${wrapper_name}"
+	done
 
-                  # 2. Create a "Sanitizing" Wrapper
-                  # This wrapper strips --target and other Clang-specific flags before calling GCC
-                  for c in clang:gcc clang++:g++; do
-                      wrapper_name="${TARGET}-${c%%:*}"
-                      gcc_bin="${c##*:}"
-                      cat > "/opt/clang-cross/bin/${wrapper_name}" <<'EOF'
+	# For targets with no LLVM backend, install GCC binaries instead of clang wrappers
+	case ${TARGET} in
+		sh4-*|or1k-*|m68k-*|microblaze*-*)
+			echo "==> Architecture ${TARGET} using robust GCC fallback..."
+
+			# 1. LINK the entire bin directory to keep internal components (cc1/cc1plus) relative
+			# This solves the 'posix_spawnp' error.
+			for n in gcc g++ cpp ar nm objcopy objdump ranlib strip; do
+				bin_source=$(realpath "${TARGET}/bin/${TARGET}-${n}")
+				[ -f "$bin_source" ] && ln -sf "$bin_source" "/opt/clang-cross/bin/${TARGET}-${n}"
+			done
+
+			# 2. Create a "Sanitizing" Wrapper
+			# This wrapper strips --target and other Clang-specific flags before calling GCC
+			for c in clang:gcc clang++:g++; do
+				wrapper_name="${TARGET}-${c%%:*}"
+				gcc_bin="${c##*:}"
+				cat > "/opt/clang-cross/bin/${wrapper_name}" <<EOF
 #!/bin/sh
-BINDIR=$(dirname "$0")
+BINDIR=\$(dirname "\$0")
 # Filter out Clang-specific flags that make GCC explode
 ARGS=""
-for arg in "$@"; do
-    case $arg in
+for arg in "\$@"; do
+    case \$arg in
         --target=*|-target|--sysroot=*) continue ;; # Strip these
-        *) ARGS="$ARGS $arg" ;;
+        *) ARGS="\$ARGS \$arg" ;;
     esac
 done
-exec "${BINDIR}/${TARGET}-gcc" $ARGS
+exec "\${BINDIR}/${TARGET}-${gcc_bin}" \$ARGS
 EOF
-            chmod +x "/opt/clang-cross/bin/${wrapper_name}"
-        done
+				chmod +x "/opt/clang-cross/bin/${wrapper_name}"
+			done
 
-        # 3. MASK the host clang-22
-        # If the build system just calls 'clang', force it to our wrapper
-        ln -sf "${TARGET}-clang" "/opt/clang-cross/bin/clang"
-        ln -sf "${TARGET}-clang++" "/opt/clang-cross/bin/clang++"
-        ;;
-esac
+			# 3. MASK the host clang
+			# If the build system just calls 'clang', force it to our wrapper
+			ln -sf "${TARGET}-clang" "/opt/clang-cross/bin/clang"
+			ln -sf "${TARGET}-clang++" "/opt/clang-cross/bin/clang++"
+			;;
+	esac
 
 	sudo find /opt/clang-cross ! -type l -exec chmod -w {} + || true
 	rm -rf "${TARGET}"
 	sudo mv /opt/clang-cross "${TARGET}"
 	sudo chown -R root:root "${TARGET}"
-          env XZ_OPT="-T0" sudo tar -cJvf "${TARGET}.tar.xz" "${TARGET}"
+	env XZ_OPT="-T0" sudo tar -cJvf "${TARGET}.tar.xz" "${TARGET}"
 	sudo sha256sum "${TARGET}.tar.xz" | awk '{ print $1 }' > "${TARGET}.tar.xz.sha256"
 }
 
@@ -219,7 +231,7 @@ if [ ! -e clang-cross.tar.xz ]; then
 fi
 
 if [ "${1}" != "llvm" ]; then
-	build_target ${1}
+	build_target "${1}"
 fi
 
 # vim: set ts=4 sw=4 noexpandtab:

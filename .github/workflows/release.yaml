@@ -14,7 +14,7 @@ name: Release
         type: boolean
         default: false
       swapspace:
-        description: Add Swap ̳Space
+        description: Add Swap
         required: true
         type: boolean
         default: false
@@ -201,7 +201,7 @@ jobs:
         uses: actions/download-artifact@v8
         with:
           name: clang-cross.tar.xz
-      - name: Cache musl-cross tarball
+      - name: Cache gnu-cross tarball
         uses: actions/cache@v5
         id: cache-target
         with:
@@ -321,7 +321,7 @@ jobs:
       - build-gnu-targets
       - build-musl-targets
     if: |
-      !cancelled() && github.event.inputs.make_release == 'true'
+      !cancelled() && inputs.make_release
     permissions:
       contents: write
     steps:
@@ -361,4 +361,4 @@ jobs:
         run: |
           # The action-gh-release step above handles most files,
           # but this ensures the body/notes are updated correctly.
-          gh release edit "${{ inputs.release_name }}" --notes-file RELEASE.md	
+          gh release edit "${{ inputs.release_name }}" --notes-file RELEASE.md
