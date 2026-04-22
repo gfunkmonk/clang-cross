@@ -52,16 +52,31 @@ EOF
         # arguments containing spaces/tabs/globs survive intact. Avoid the
         # classic "ARGS=\$ARGS \$arg" + unquoted-\$ARGS pattern which silently
         # corrupts such arguments.
+        #
+        # The filter drops the concatenated forms (e.g. --target=foo,
+        # --sysroot=/path) via the glob in ${filter_flags}. The split forms
+        # -target foo / --target foo / --sysroot /path take two argv slots,
+        # so when we see the flag name alone we also drop the next argument;
+        # otherwise the operand leaks through to GCC as a stray source file.
         cat > "/opt/clang-cross/bin/${wrapper_name}" <<EOF
 #!/bin/sh
 BINDIR=\$(dirname "\$0")
 set -- "\$@" __CLANG_CROSS_WRAPPER_END__
+drop_next=false
 while :; do
     arg="\$1"; shift
     if [ "\$arg" = __CLANG_CROSS_WRAPPER_END__ ]; then
         break
     fi
+    if [ "\$drop_next" = true ]; then
+        drop_next=false
+        continue
+    fi
     case "\$arg" in
+        -target|--target|--sysroot)
+            drop_next=true
+            continue
+            ;;
         ${filter_flags}) continue ;;
     esac
     set -- "\$@" "\$arg"
