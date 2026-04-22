@@ -39,12 +39,13 @@ create_wrapper() {
     local wrapper_name="$1"
     local target_bin="$2"
     local filter_flags="$3"
+    local extra_args="$4"
 
     if [ "$filter_flags" = "false" ]; then
         cat > "/opt/clang-cross/bin/${wrapper_name}" <<EOF
 #!/bin/sh
 BINDIR=\$(dirname "\$0")
-exec "\${BINDIR}/${target_bin}" "\$@"
+exec "\${BINDIR}/${target_bin}" ${extra_args} "\$@"
 EOF
     else
         cat > "/opt/clang-cross/bin/${wrapper_name}" <<EOF
@@ -57,7 +58,7 @@ for arg in "\$@"; do
         *) ARGS="\$ARGS \$arg" ;;
     esac
 done
-exec "\${BINDIR}/${target_bin}" \$ARGS
+exec "\${BINDIR}/${target_bin}" ${extra_args} \$ARGS
 EOF
     fi
     chmod +x "/opt/clang-cross/bin/${wrapper_name}"
@@ -75,9 +76,6 @@ build_llvm() {
               echo "ERROR: sudo access required but not available" >&2
               exit 1
           fi
-
-          # OPTIMIZATION: Use trap for cleanup on exit
-          trap 'rm -rf build-llvm clang-cross.tar.xz' EXIT
 
 	sudo mkdir -p /opt
 	sudo chmod 0777 /opt
@@ -139,9 +137,6 @@ build_target() {
 		exit 1
 	fi
 
-          # OPTIMIZATION: Add trap for cleanup
-          trap 'rm -rf "${TARGET}"' EXIT
-
 	if [ ! -f "clang-cross.tar.xz" ]; then
               echo "ERROR: clang-cross.tar.xz not found. Run build_llvm first." >&2
               exit 1
@@ -190,7 +185,7 @@ build_target() {
 	for c in clang:gcc clang++:g++; do
 	    wrapper_name="${TARGET}-${c%%:*}"
 	    gcc_bin="${TARGET}-${c##*:}"
-              create_wrapper "${wrapper_name}" "${gcc_bin}" "--target=*|-target|--sysroot=*"
+              create_wrapper "${wrapper_name}" "${gcc_bin}" "--target=*|-target|--sysroot=*" "${CLANG_ARGS}"
           done
 
 	# 2. Setup standard aliases
@@ -222,7 +217,7 @@ build_target() {
 			for c in clang:gcc clang++:g++; do
 				wrapper_name="${TARGET}-${c%%:*}"
                       		gcc_bin="${TARGET}-${c##*:}"
-                      		create_wrapper "${wrapper_name}" "${gcc_bin}" "--target=*|-target|--sysroot=*"
+                      		create_wrapper "${wrapper_name}" "${gcc_bin}" "--target=*|-target|--sysroot=*" "${CLANG_ARGS}"
                   		done
 			# 3. MASK the host clang
 			# If the build system just calls 'clang', force it to our wrapper
