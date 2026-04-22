@@ -193,9 +193,10 @@ build_target() {
 
 		    # 1. Copy the internal GCC structure so 'cc1' stays relative to the binary
                         # We put the actual target-triple folder and lib/libexec into /opt/clang-cross
-                        cp -a "${TARGET}/${TARGET}" /opt/clang-cross/
-                        cp -a "${TARGET}/lib" /opt/clang-cross/
-                        [ -d "${TARGET}/libexec" ] && cp -a "${TARGET}/libexec" /opt/clang-cross/
+                        #cp -a "${TARGET}/${TARGET}" /opt/clang-cross/
+                        #cp -a "${TARGET}/lib" /opt/clang-cross/
+                        #[ -d "${TARGET}/libexec" ] && cp -a "${TARGET}/libexec" /opt/clang-cross/
+                        cp -a "${TARGET}/." /opt/clang-cross/
 
 		    # 2. Copy the actual binaries to /opt/clang-cross/bin
 		    # This prevents the broken symlink to /home/runner/...
