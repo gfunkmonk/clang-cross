@@ -233,6 +233,7 @@ build_target() {
 
         # Final cleanup and packaging
         sudo find /opt/clang-cross ! -type l -exec chmod -w {} + || true			
+        chmod -R +w "${TARGET}" 2>/dev/null || true
         rm -rf "${TARGET}"
         sudo mv /opt/clang-cross "${TARGET}"
         sudo chown -R root:root "${TARGET}"
