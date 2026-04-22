@@ -161,7 +161,6 @@ jobs:
           - armv7-unknown-linux-gnueabi
           - armv7-unknown-linux-gnueabihf
           - hppa-unknown-linux-gnu
-          - i386-unknown-linux-gnu
           - i486-unknown-linux-gnu
           - i586-unknown-linux-gnu
           - i686-unknown-linux-gnu
