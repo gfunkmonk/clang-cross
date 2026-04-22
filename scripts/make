@@ -39,12 +39,13 @@ create_wrapper() {
     local wrapper_name="$1"
     local target_bin="$2"
     local filter_flags="$3"
+    local extra_args="$4"
 
     if [ "$filter_flags" = "false" ]; then
         cat > "/opt/clang-cross/bin/${wrapper_name}" <<EOF
 #!/bin/sh
 BINDIR=\$(dirname "\$0")
-exec "\${BINDIR}/${target_bin}" "\$@"
+exec "\${BINDIR}/${target_bin}" ${extra_args} "\$@"
 EOF
     else
         cat > "/opt/clang-cross/bin/${wrapper_name}" <<EOF
@@ -57,7 +58,7 @@ for arg in "\$@"; do
         *) ARGS="\$ARGS \$arg" ;;
     esac
 done
-exec "\${BINDIR}/${target_bin}" \$ARGS
+exec "\${BINDIR}/${target_bin}" ${extra_args} \$ARGS
 EOF
     fi
     chmod +x "/opt/clang-cross/bin/${wrapper_name}"
@@ -75,9 +76,6 @@ build_llvm() {
               echo "ERROR: sudo access required but not available" >&2
               exit 1
           fi
-
-          # OPTIMIZATION: Use trap for cleanup on exit
-          trap 'rm -rf build-llvm clang-cross.tar.xz' EXIT
 
 	sudo mkdir -p /opt
 	sudo chmod 0777 /opt
@@ -131,6 +129,7 @@ build_target() {
               echo "ERROR: Target parameter is required" >&2
               exit 1
           fi
+
 	# Use the variable defined at the top of the script
 	if [ -f "${TARGETS_DIR}/${TARGET}/config" ]; then
 		. "${TARGETS_DIR}/${TARGET}/config"
@@ -139,8 +138,8 @@ build_target() {
 		exit 1
 	fi
 
-          # OPTIMIZATION: Add trap for cleanup
-          trap 'chmod -R +w "${TARGET}" 2>/dev/null || true; rm -rf "${TARGET}"' EXIT
+	# Cleanup trap: ensure directory is writable before rm -rf
+	trap 'chmod -R +w "${TARGET}" 2>/dev/null || true; rm -rf "${TARGET}"' EXIT
 
 	if [ ! -f "clang-cross.tar.xz" ]; then
               echo "ERROR: clang-cross.tar.xz not found. Run build_llvm first." >&2
@@ -191,37 +190,27 @@ build_target() {
 	case ${TARGET} in
                 sh4-*|or1k-*|m68k-*|microblaze*-*)
                         echo "==> Architecture ${TARGET} using robust GCC fallback..."
-                        BUILD_TYPE="FALLBACK"
 
-                        # 1. Link GCC components
+		    # 1. Link GCC binaries
                         for n in gcc g++ cpp ar nm objcopy objdump ranlib strip; do
-                                bin_source=$(realpath "${TARGET}/bin/${TARGET}-${n}")
-                                [ -f "$bin_source" ] && ln -sf "$bin_source" "/opt/clang-cross/bin/${TARGET}-${n}"
+                            bin_source=$(realpath "${TARGET}/bin/${TARGET}-${n}")
+                            [ -f "$bin_source" ] && ln -sf "$bin_source" "/opt/clang-cross/bin/${TARGET}-${n}"
                         done
 
-                        # 2. Create sanitizing wrappers pointing to the linked GCC
+		    # 2. Use helper to create sanitizing GCC wrappers
+                        # We strip --target/--sysroot and add whatever is in CLANG_ARGS
                         for c in clang:gcc clang++:g++; do
-                                wrapper_name="${TARGET}-${c%%:*}"
-                                real_bin="${TARGET}-${c##*:}" # Calls the symlink created above
-                                create_wrapper "${wrapper_name}" "${real_bin}" "--target=*|-target|--sysroot=*"
+                            create_wrapper "${TARGET}-${c%%:*}" "${TARGET}-${c##*:}" "--target=*|-target|--sysroot=*" "${CLANG_ARGS}"
                         done
-                        ;;
+ 	              ;;
                 *)
                         echo "==> Architecture ${TARGET} using standard LLVM/Clang..."
-                        BUILD_TYPE="LLVM"
 
-                        # 1. Create standard wrappers pointing to the internal Clang binary
+		    # 1. Use helper to create standard LLVM wrappers
+                        # We DON'T filter flags, but we DO inject the mandatory target/sysroot
+                        LLVM_EXTRA="--target=${TARGET} --sysroot=\${BINDIR}/../${TARGET}/sysroot ${CLANG_ARGS}"
                         for c in clang:clang clang++:clang++; do
-                                wrapper_name="${TARGET}-${c%%:*}"
-                                real_bin="${c##*:}" # Calls the actual 'clang' binary in /opt/clang-cross/bin/
-                                
-                                # Use a more specific create_wrapper call for LLVM targets
-                                cat > "/opt/clang-cross/bin/${wrapper_name}" <<EOF
-#!/bin/sh
-BINDIR=\$(dirname "\$0")
-exec "\${BINDIR}/${real_bin}" --target="${TARGET}" --sysroot="\${BINDIR}/../${TARGET}/sysroot" ${CLANG_ARGS} "\$@"
-EOF
-                                chmod +x "/opt/clang-cross/bin/${wrapper_name}"
+		        create_wrapper "${TARGET}-${c%%:*}" "${c##*:}" "false" "${LLVM_EXTRA}"
                         done
                         ;;
         esac
@@ -237,12 +226,9 @@ EOF
         ln -sf "${TARGET}-clang" "/opt/clang-cross/bin/clang"
         ln -sf "${TARGET}-clang++" "/opt/clang-cross/bin/clang++"
 
-        # LLVM Tool Wrappers (ar, nm, etc.)
-        # These work for both as long as LLVM supports the binary format
+        # LLVM Tool Wrappers
         for n in ar:ar c++filt:cxxfilt nm:nm objcopy:objcopy objdump:objdump ranlib:ranlib size:size strings:strings strip:strip; do
-                wrapper_name="${TARGET}-${n%%:*}"
-                llvm_tool="llvm-${n##*:}"
-                create_wrapper "${wrapper_name}" "${llvm_tool}" "false"
+            create_wrapper "${TARGET}-${n%%:*}" "llvm-${n##*:}" "false" ""
         done
 
         # Final cleanup and packaging
