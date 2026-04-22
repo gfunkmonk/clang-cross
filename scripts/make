@@ -67,8 +67,8 @@ EOF
 build_llvm() {
 	# Ensure submodules are actually there
 	if [ ! -f "llvm/llvm/CMakeLists.txt" ]; then
-		echo "ERROR: LLVM source missing. Run: git submodule update --init --recursive" >&2
-		exit 1
+	    echo "ERROR: LLVM source missing. Run: git submodule update --init --recursive" >&2
+	    exit 1
 	fi
 
           # SECURITY FIX: Validate sudo access before proceeding
@@ -188,24 +188,24 @@ build_target() {
 
 	# For targets with no LLVM backend, install GCC binaries instead of clang wrappers
 	case ${TARGET} in
-                sh4-*|or1k-*|m68k-*|microblaze*-*)
+                sh4-*|or1k-*|microblaze*-*)
                         echo "==> Architecture ${TARGET} using robust GCC fallback..."
 
-		    # 1. Link GCC binaries
-                        for n in gcc g++ cpp ar nm objcopy objdump ranlib strip; do
-                            bin_source=$(realpath "${TARGET}/bin/${TARGET}-${n}")
-                            [ -f "$bin_source" ] && ln -sf "$bin_source" "/opt/clang-cross/bin/${TARGET}-${n}"
-                        done
+		    # DO NOT delete bin for fallbacks
+		    cp -a "${TARGET}/include" /opt/clang-cross/
+                        cp -a "${TARGET}/lib/gcc" /opt/clang-cross/lib/
+                        cp -a "${TARGET}/${TARGET}" /opt/clang-cross/
 
-		    # 2. Use helper to create sanitizing GCC wrappers
-                        # We strip --target/--sysroot and add whatever is in CLANG_ARGS
-                        for c in clang:gcc clang++:g++; do
-                            create_wrapper "${TARGET}-${c%%:*}" "${TARGET}-${c##*:}" "--target=*|-target|--sysroot=*" "${CLANG_ARGS}"
+		    # Keep the bin directory for the fallback binaries
+                        mkdir -p "/opt/clang-cross/${TARGET}/bin"
+                        cp -a "${TARGET}/bin" "/opt/clang-cross/${TARGET}/"
+
+		    for n in gcc g++ cpp ar nm objcopy objdump ranlib strip; do
+                            ln -sf "../${TARGET}/bin/${TARGET}-${n}" "/opt/clang-cross/bin/${TARGET}-${n}"
                         done
  	              ;;
                 *)
                         echo "==> Architecture ${TARGET} using standard LLVM/Clang..."
-
 		    # 1. Use helper to create standard LLVM wrappers
                         # We DON'T filter flags, but we DO inject the mandatory target/sysroot
                         LLVM_EXTRA="--target=${TARGET} --sysroot=\${BINDIR}/../${TARGET}/sysroot ${CLANG_ARGS}"
@@ -215,8 +215,6 @@ build_target() {
                         ;;
         esac
 
-        # --- Generic Setup (Shared by both) ---
-        
         # Aliases
         ln -sf "${TARGET}-clang" "/opt/clang-cross/bin/${TARGET}-cc"
         ln -sf "${TARGET}-clang++" "/opt/clang-cross/bin/${TARGET}-c++"
