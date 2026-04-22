@@ -38,7 +38,7 @@ name: Release
         type: string
         default: ''
 concurrency:
-  group: '${{ github.workflow }}-${{ github.ref }}-${{ github.event.inputs.libc }}'
+  group: '${{ github.workflow }}-${{ github.ref }}-${{ inputs.libc }}'
   cancel-in-progress: true
 permissions:
   contents: read
@@ -161,6 +161,7 @@ jobs:
           - armv7-unknown-linux-gnueabi
           - armv7-unknown-linux-gnueabihf
           - hppa-unknown-linux-gnu
+          - i386-unknown-linux-gnu
           - i486-unknown-linux-gnu
           - i586-unknown-linux-gnu
           - i686-unknown-linux-gnu
@@ -209,7 +210,7 @@ jobs:
             ${{ matrix.target }}.tar.xz
             ${{ matrix.target }}.tar.xz.sha256
           key: 'target-${{ matrix.target }}-${{ steps.llvm-hash.outputs.hash }}'
-      - name: Build el Target
+      - name: Build Target
         if: steps.cache-target.outputs.cache-hit != 'true'
         run: |
           sudo rm -rf /opt/clang-cross
@@ -294,7 +295,7 @@ jobs:
             ${{ matrix.target }}.tar.xz
             ${{ matrix.target }}.tar.xz.sha256
           key: 'target-${{ matrix.target }}-${{ steps.llvm-hash.outputs.hash }}'
-      - name: Build el Target
+      - name: Build Target
         if: steps.cache-target.outputs.cache-hit != 'true'
         run: |
           sudo rm -rf /opt/clang-cross
@@ -316,7 +317,7 @@ jobs:
           retention-days: 1
   release:
     name: Release
-    runs-on: ubuntu-slim
+    runs-on: ubuntu-24.04
     needs:
       - build-gnu-targets
       - build-musl-targets
