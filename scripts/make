@@ -190,14 +190,21 @@ build_target() {
     case ${TARGET} in
 	      sh4-*|or1k-*|m68k-*|microblaze-*|microblazeel-*)
                         echo "==> Architecture ${TARGET} using robust GCC fallback..."
-		    # DO NOT delete bin for fallbacks
-		    cp -a "${TARGET}/include" /opt/clang-cross/
-                        cp -a "${TARGET}/lib/gcc" /opt/clang-cross/lib/
-                        cp -a "${TARGET}/${TARGET}" /opt/clang-cross/
 
-		    # Keep the bin directory for the fallback binaries
-                        mkdir -p "/opt/clang-cross/${TARGET}/bin"
-                        cp -a "${TARGET}/bin" "/opt/clang-cross/${TARGET}/"
+		    # 1. Copy the internal GCC structure so 'cc1' stays relative to the binary
+                        # We put the actual target-triple folder and lib/libexec into /opt/clang-cross
+                        cp -a "${TARGET}/${TARGET}" /opt/clang-cross/
+                        cp -a "${TARGET}/lib" /opt/clang-cross/
+                        [ -d "${TARGET}/libexec" ] && cp -a "${TARGET}/libexec" /opt/clang-cross/
+
+		    # 2. Copy the actual binaries to /opt/clang-cross/bin
+		    # This prevents the broken symlink to /home/runner/...
+                        mkdir -p /opt/clang-cross/bin
+                        for n in gcc g++ cpp ar nm objcopy objdump ranlib strip; do
+                            if [ -f "${TARGET}/bin/${TARGET}-${n}" ]; then
+                                cp -a "${TARGET}/bin/${TARGET}-${n}" "/opt/clang-cross/bin/${TARGET}-${n}"
+                            fi
+                        done
 
                         # 1. Link the *actual* GCC binaries
 		    for n in gcc g++ cpp ar nm objcopy objdump ranlib strip; do
@@ -210,7 +217,6 @@ build_target() {
                         ;;
                 *)
                         echo "==> Architecture ${TARGET} using standard LLVM/Clang..."
-
                         # 1. Create a wrapper that calls the real clang with correct target flags
                         LLVM_EXTRA="--target=${TARGET} --sysroot=\\${BINDIR}/../${TARGET}/sysroot ${CLANG_ARGS}"
                         for c in clang:clang clang++:clang++; do
