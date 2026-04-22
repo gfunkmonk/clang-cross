@@ -58,6 +58,10 @@ EOF
         # -target foo / --target foo / --sysroot /path take two argv slots,
         # so when we see the flag name alone we also drop the next argument;
         # otherwise the operand leaks through to GCC as a stray source file.
+        # POSIX-safe filter: rebuild positional parameters via a sentinel so
+        # arguments containing spaces/tabs/globs survive intact. Avoid the
+        # classic "ARGS=\$ARGS \$arg" + unquoted-\$ARGS pattern which silently
+        # corrupts such arguments.
         cat > "/opt/clang-cross/bin/${wrapper_name}" <<EOF
 #!/bin/sh
 BINDIR=\$(dirname "\$0")
