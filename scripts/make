@@ -166,45 +166,6 @@ EOF
 		chmod +x "/opt/clang-cross/bin/${wrapper_name}"
 	done
 
-	# For targets with no LLVM backend, install GCC binaries instead of clang wrappers
-	case ${TARGET} in
-		sh4-*|or1k-*|m68k-*)
-			echo "==> Architecture ${TARGET} using robust GCC fallback..."
-
-			# 1. LINK the entire bin directory to keep internal components (cc1/cc1plus) relative
-			# This solves the 'posix_spawnp' error.
-			for n in gcc g++ cpp ar nm objcopy objdump ranlib strip; do
-				bin_source=$(realpath "${TARGET}/bin/${TARGET}-${n}")
-				[ -f "$bin_source" ] && ln -sf "$bin_source" "/opt/clang-cross/bin/${TARGET}-${n}"
-			done
-
-			# 2. Create a "Sanitizing" Wrapper
-			# This wrapper strips --target and other Clang-specific flags before calling GCC
-			for c in clang:gcc clang++:g++; do
-				wrapper_name="${TARGET}-${c%%:*}"
-				gcc_bin="${c##*:}"
-				cat > "/opt/clang-cross/bin/${wrapper_name}" <<EOF
-#!/bin/sh
-BINDIR=\$(dirname "\$0")
-# Filter out Clang-specific flags that make GCC explode
-ARGS=""
-for arg in "\$@"; do
-    case \$arg in
-        --target=*|-target|--sysroot=*) continue ;; # Strip these
-        *) ARGS="\$ARGS \$arg" ;;
-    esac
-done
-exec "\${BINDIR}/${TARGET}-${gcc_bin}" \$ARGS
-EOF
-				chmod +x "/opt/clang-cross/bin/${wrapper_name}"
-			done
-
-			# 3. MASK the host clang
-			# If the build system just calls 'clang', force it to our wrapper
-			ln -sf "${TARGET}-clang" "/opt/clang-cross/bin/clang"
-			ln -sf "${TARGET}-clang++" "/opt/clang-cross/bin/clang++"
-			;;
-	esac
 
 	sudo find /opt/clang-cross ! -type l -exec chmod -w {} + || true
 	rm -rf "${TARGET}"
