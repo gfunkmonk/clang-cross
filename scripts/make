@@ -12,8 +12,8 @@ REPODIR="$(dirname "$SCRIPT_DIR")"
 TARGETS_DIR="${REPODIR}/targets"
 
 GIT_URL="https://github.com/gfunkmonk"
-GNU_REL=gnuewt
-MUSL_REL=garbage
+GNU_REL=gnutella
+MUSL_REL=birthday
 
 LLVM_TARGETS="AArch64;ARM;LoongArch;Mips;PowerPC;RISCV;SystemZ;X86;Sparc;M68k"
 LLVM_EXPERIMENTAL_TARGETS_TO_BUILD="M68k"
@@ -161,15 +161,23 @@ EOF
     done
 	# For targets with no LLVM backend, install GCC binaries instead of clang wrappers
           case ${TARGET} in
-		m68k-*|sh4-*|or1k-*)
+		sh4-*|or1k-*)
 			echo "==> Architecture ${TARGET} requires GCC backend fallback..."
-			for n in gcc g++ cpp ar nm objcopy objdump ranlib strip; do
-                              bin_source="${TARGET}/bin/${TARGET}-${n}"
-                              if [ -f "$bin_source" ]; then
-                                 cp "$bin_source" /opt/clang-cross/bin/
-                                 chmod +x "/opt/clang-cross/bin/${TARGET}-${n}"
-                              fi
-			done
+			#for n in gcc g++ cpp ar nm objcopy objdump ranlib strip; do
+                              #bin_source="${TARGET}/bin/${TARGET}-${n}"
+                              #if [ -f "$bin_source" ]; then
+                              #   cp "$bin_source" /opt/clang-cross/bin/
+                              #   chmod +x "/opt/clang-cross/bin/${TARGET}-${n}"
+                              #fi
+			#done
+                              for n in gcc g++ cpp ar nm objcopy objdump ranlib strip; do
+                                # Get the absolute path to the real GCC binary
+                                bin_source=$(realpath "${TARGET}/bin/${TARGET}-${n}")
+                                  if [ -f "$bin_source" ]; then
+                                    # Create a symbolic link instead of copying
+                                    ln -sf "$bin_source" "/opt/clang-cross/bin/${TARGET}-${n}"
+                                  fi
+                               done
 			# Override aliases to point to GCC
 			ln -sf "${TARGET}-gcc" "/opt/clang-cross/bin/${TARGET}-cc"
 			ln -sf "${TARGET}-g++" "/opt/clang-cross/bin/${TARGET}-c++"
