@@ -128,24 +128,28 @@ build_target() {
 	rm -rf "/opt/clang-cross/lib/gcc/${TARGET}"/*/{install-tools,plugin}
 	rm -rf "/opt/clang-cross/${TARGET}"/{bin,debug-root,lib}
 	# 1. Create Clang/LLVM-based wrappers with robust quoting
-    for n in clang:clang clang++:clang++ cpp:clang-cpp; do
-        wrapper_name="${TARGET}-${n%%:*}"
-        binary_name="${n##*:}"
-        
-        # We use a single-quoted heredoc 'EOF' to prevent variable expansion 
-        # of $0 and $@ during creation, but we allow ${CLANG_ARGS} to expand now.
-        cat > "/opt/clang-cross/bin/${wrapper_name}" <<EOF
+          for c in clang:gcc clang++:g++; do
+              wrapper_name="${TARGET}-${c%%:*}"
+              gcc_bin="${c##*:}"
+              cat > "/opt/clang-cross/bin/${wrapper_name}" <<EOF
 #!/bin/sh
 BINDIR=\$(dirname "\$0")
-TARGET="${TARGET}"
-exec "\${BINDIR}/${binary_name}" --target="\${TARGET}" --sysroot="\${BINDIR}/../\${TARGET}/sysroot" ${CLANG_ARGS} "\$@"
+ARGS=""
+for arg in "\$@"; do
+    case \$arg in
+        --target=*|-target|--sysroot=*) continue ;;
+        *) ARGS="\$ARGS \$arg" ;;
+    esac
+done
+exec "\${BINDIR}/${TARGET}-${gcc_bin}" \$ARGS
 EOF
-        chmod +x "/opt/clang-cross/bin/${wrapper_name}"
-    done
+    chmod +x "/opt/clang-cross/bin/${wrapper_name}"
+done
 
     # 2. Setup standard aliases
     ln -sf "${TARGET}-clang" "/opt/clang-cross/bin/${TARGET}-cc"
     ln -sf "${TARGET}-clang++" "/opt/clang-cross/bin/${TARGET}-c++"
+    sudo rm "/opt/clang-cross/bin/clang"
     ln -sf "${TARGET}-clang" "/opt/clang-cross/bin/clang"
 
     # 3. Create LLVM tool wrappers (ar, nm, etc.)
