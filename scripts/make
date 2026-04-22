@@ -140,7 +140,7 @@ build_target() {
 	fi
 
           # OPTIMIZATION: Add trap for cleanup
-          trap 'rm -rf "${TARGET}"' EXIT
+          trap 'chmod -R +w "${TARGET}" 2>/dev/null || true; rm -rf "${TARGET}"' EXIT
 
 	if [ ! -f "clang-cross.tar.xz" ]; then
               echo "ERROR: clang-cross.tar.xz not found. Run build_llvm first." >&2
@@ -186,57 +186,72 @@ build_target() {
 	cp -a "${TARGET}/${TARGET}" /opt/clang-cross/
 	rm -rf "/opt/clang-cross/lib/gcc/${TARGET}"/*/{install-tools,plugin}
 	rm -rf "/opt/clang-cross/${TARGET}"/{bin,debug-root,lib}
-	# 1. Create Clang/LLVM-based wrappers using helper function
-	for c in clang:gcc clang++:g++; do
-	    wrapper_name="${TARGET}-${c%%:*}"
-	    gcc_bin="${TARGET}-${c##*:}"
-              create_wrapper "${wrapper_name}" "${gcc_bin}" "--target=*|-target|--sysroot=*"
-          done
-
-	# 2. Setup standard aliases
-	ln -sf "${TARGET}-clang" "/opt/clang-cross/bin/${TARGET}-cc"
-	ln -sf "${TARGET}-clang++" "/opt/clang-cross/bin/${TARGET}-c++"
-	sudo rm -f "/opt/clang-cross/bin/clang"
-	ln -sf "${TARGET}-clang" "/opt/clang-cross/bin/clang"
-
-          # 3. Create LLVM tool wrappers using helper function
-	for n in ar:ar c++filt:cxxfilt nm:nm objcopy:objcopy objdump:objdump ranlib:ranlib size:size strings:strings strip:strip; do
-		wrapper_name="${TARGET}-${n%%:*}"
-		llvm_tool="llvm-${n##*:}"
-  	          create_wrapper "${wrapper_name}" "${llvm_tool}" "false"
-	done
 
 	# For targets with no LLVM backend, install GCC binaries instead of clang wrappers
 	case ${TARGET} in
-		sh4-*|or1k-*|m68k-*|microblaze*-*)
-			echo "==> Architecture ${TARGET} using robust GCC fallback..."
+                sh4-*|or1k-*|m68k-*|microblaze*-*)
+                        echo "==> Architecture ${TARGET} using robust GCC fallback..."
+                        BUILD_TYPE="FALLBACK"
 
-			# 1. LINK the entire bin directory to keep internal components (cc1/cc1plus) relative
-			# This solves the 'posix_spawnp' error.
-			for n in gcc g++ cpp ar nm objcopy objdump ranlib strip; do
-				bin_source=$(realpath "${TARGET}/bin/${TARGET}-${n}")
-				[ -f "$bin_source" ] && ln -sf "$bin_source" "/opt/clang-cross/bin/${TARGET}-${n}"
-			done
+                        # 1. Link GCC components
+                        for n in gcc g++ cpp ar nm objcopy objdump ranlib strip; do
+                                bin_source=$(realpath "${TARGET}/bin/${TARGET}-${n}")
+                                [ -f "$bin_source" ] && ln -sf "$bin_source" "/opt/clang-cross/bin/${TARGET}-${n}"
+                        done
 
-                              # 2. Create sanitizing wrappers using helper function
-			for c in clang:gcc clang++:g++; do
-				wrapper_name="${TARGET}-${c%%:*}"
-                      		gcc_bin="${TARGET}-${c##*:}"
-                      		create_wrapper "${wrapper_name}" "${gcc_bin}" "--target=*|-target|--sysroot=*"
-                  		done
-			# 3. MASK the host clang
-			# If the build system just calls 'clang', force it to our wrapper
-			ln -sf "${TARGET}-clang" "/opt/clang-cross/bin/clang"
-			ln -sf "${TARGET}-clang++" "/opt/clang-cross/bin/clang++"
-			;;
-	esac
+                        # 2. Create sanitizing wrappers pointing to the linked GCC
+                        for c in clang:gcc clang++:g++; do
+                                wrapper_name="${TARGET}-${c%%:*}"
+                                real_bin="${TARGET}-${c##*:}" # Calls the symlink created above
+                                create_wrapper "${wrapper_name}" "${real_bin}" "--target=*|-target|--sysroot=*"
+                        done
+                        ;;
+                *)
+                        echo "==> Architecture ${TARGET} using standard LLVM/Clang..."
+                        BUILD_TYPE="LLVM"
 
-	sudo find /opt/clang-cross ! -type l -exec chmod -w {} + || true
-	rm -rf "${TARGET}"
-	sudo mv /opt/clang-cross "${TARGET}"
-	sudo chown -R root:root "${TARGET}"
-	env XZ_OPT="-T0" sudo tar -cJvf "${TARGET}.tar.xz" "${TARGET}"
-	sudo sha256sum "${TARGET}.tar.xz" | awk '{ print $1 }' > "${TARGET}.tar.xz.sha256"
+                        # 1. Create standard wrappers pointing to the internal Clang binary
+                        for c in clang:clang clang++:clang++; do
+                                wrapper_name="${TARGET}-${c%%:*}"
+                                real_bin="${c##*:}" # Calls the actual 'clang' binary in /opt/clang-cross/bin/
+                                
+                                # Use a more specific create_wrapper call for LLVM targets
+                                cat > "/opt/clang-cross/bin/${wrapper_name}" <<EOF
+#!/bin/sh
+BINDIR=\$(dirname "\$0")
+exec "\${BINDIR}/${real_bin}" --target="${TARGET}" --sysroot="\${BINDIR}/../${TARGET}/sysroot" ${CLANG_ARGS} "\$@"
+EOF
+                                chmod +x "/opt/clang-cross/bin/${wrapper_name}"
+                        done
+                        ;;
+        esac
+
+        # --- Generic Setup (Shared by both) ---
+        
+        # Aliases
+        ln -sf "${TARGET}-clang" "/opt/clang-cross/bin/${TARGET}-cc"
+        ln -sf "${TARGET}-clang++" "/opt/clang-cross/bin/${TARGET}-c++"
+        
+        # Mask host Clang
+        rm -f "/opt/clang-cross/bin/clang" "/opt/clang-cross/bin/clang++"
+        ln -sf "${TARGET}-clang" "/opt/clang-cross/bin/clang"
+        ln -sf "${TARGET}-clang++" "/opt/clang-cross/bin/clang++"
+
+        # LLVM Tool Wrappers (ar, nm, etc.)
+        # These work for both as long as LLVM supports the binary format
+        for n in ar:ar c++filt:cxxfilt nm:nm objcopy:objcopy objdump:objdump ranlib:ranlib size:size strings:strings strip:strip; do
+                wrapper_name="${TARGET}-${n%%:*}"
+                llvm_tool="llvm-${n##*:}"
+                create_wrapper "${wrapper_name}" "${llvm_tool}" "false"
+        done
+
+        # Final cleanup and packaging
+        sudo find /opt/clang-cross ! -type l -exec chmod -w {} + || true			
+        rm -rf "${TARGET}"
+        sudo mv /opt/clang-cross "${TARGET}"
+        sudo chown -R root:root "${TARGET}"
+        env XZ_OPT="-T0" sudo tar -cJvf "${TARGET}.tar.xz" "${TARGET}"
+        sudo sha256sum "${TARGET}.tar.xz" | awk '{ print $1 }' > "${TARGET}.tar.xz.sha256"
 }
 
 # CODE QUALITY: Add input validation
