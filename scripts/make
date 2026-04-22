@@ -48,17 +48,44 @@ BINDIR=\$(dirname "\$0")
 exec "\${BINDIR}/${target_bin}" ${extra_args} "\$@"
 EOF
     else
+        # POSIX-safe filter: rebuild positional parameters via a sentinel so
+        # arguments containing spaces/tabs/globs survive intact. Avoid the
+        # classic "ARGS=\$ARGS \$arg" + unquoted-\$ARGS pattern which silently
+        # corrupts such arguments.
+        #
+        # The filter drops the concatenated forms (e.g. --target=foo,
+        # --sysroot=/path) via the glob in ${filter_flags}. The split forms
+        # -target foo / --target foo / --sysroot /path take two argv slots,
+        # so when we see the flag name alone we also drop the next argument;
+        # otherwise the operand leaks through to GCC as a stray source file.
+        # POSIX-safe filter: rebuild positional parameters via a sentinel so
+        # arguments containing spaces/tabs/globs survive intact. Avoid the
+        # classic "ARGS=\$ARGS \$arg" + unquoted-\$ARGS pattern which silently
+        # corrupts such arguments.
         cat > "/opt/clang-cross/bin/${wrapper_name}" <<EOF
 #!/bin/sh
 BINDIR=\$(dirname "\$0")
-ARGS=""
-for arg in "\$@"; do
-    case \$arg in
+set -- "\$@" __CLANG_CROSS_WRAPPER_END__
+drop_next=false
+while :; do
+    arg="\$1"; shift
+    if [ "\$arg" = __CLANG_CROSS_WRAPPER_END__ ]; then
+        break
+    fi
+    if [ "\$drop_next" = true ]; then
+        drop_next=false
+        continue
+    fi
+    case "\$arg" in
+        -target|--target|--sysroot)
+            drop_next=true
+            continue
+            ;;
         ${filter_flags}) continue ;;
-        *) ARGS="\$ARGS \$arg" ;;
     esac
+    set -- "\$@" "\$arg"
 done
-exec "\${BINDIR}/${target_bin}" ${extra_args} \$ARGS
+exec "\${BINDIR}/${target_bin}" ${extra_args} "\$@"
 EOF
     fi
     chmod +x "/opt/clang-cross/bin/${wrapper_name}"
@@ -132,6 +159,7 @@ build_target() {
 
 	# Use the variable defined at the top of the script
 	if [ -f "${TARGETS_DIR}/${TARGET}/config" ]; then
+		# shellcheck disable=SC1090
 		. "${TARGETS_DIR}/${TARGET}/config"
 	else
 		echo "ERROR: Configuration for ${TARGET} not found in ${TARGETS_DIR}" >&2
@@ -170,7 +198,7 @@ build_target() {
 		fi
                     echo "Download attempt $((n + 1)) failed, cleaning up..."
 		rm -rf "${TARGET}"
-              if [ $n -lt 9 ]; then
+              if [ "$n" -lt 9 ]; then
                   echo "Waiting 5 seconds before retry..."
                   sleep 5
               fi
@@ -247,13 +275,65 @@ build_target() {
         sudo sha256sum "${TARGET}.tar.xz" | awk '{ print $1 }' > "${TARGET}.tar.xz.sha256"
 }
 
-# CODE QUALITY: Add input validation
+usage() {
+    cat <<USAGE
+Usage: $0 <subcommand>
+
+Subcommands:
+    llvm              Build the base clang-cross toolchain (LLVM/clang/lld).
+    list              Print available targets (one per line) and exit.
+    -h, --help        Show this help and exit.
+    <target>          Build the cross toolchain for <target>. If
+                      clang-cross.tar.xz is not present it is built first.
+
+Targets are directories under ${TARGETS_DIR}/. Run '$0 list' to see them.
+USAGE
+}
+
+list_targets() {
+    if [ ! -d "${TARGETS_DIR}" ]; then
+        echo "ERROR: targets directory not found: ${TARGETS_DIR}" >&2
+        exit 1
+    fi
+    # Only list entries that actually have a config file, to avoid surfacing
+    # partially-added targets that the build would then fail on anyway.
+    (cd "${TARGETS_DIR}" && for d in */; do
+        d="${d%/}"
+        [ -f "${d}/config" ] && printf '%s\n' "${d}"
+    done) | sort
+}
+
+suggest_targets() {
+    local requested="$1"
+    echo "ERROR: unknown target '${requested}'" >&2
+    # Best-effort fuzzy suggestion: prefix-match on the first 4 chars.
+    local prefix="${requested:0:4}"
+    local hits
+    hits="$(list_targets | grep -iF -- "${prefix}" | head -n 8 || true)"
+    if [ -n "${hits}" ]; then
+        echo "Did you mean one of:" >&2
+        printf '%s\n' "${hits}" | sed 's/^/  /' >&2
+    else
+        echo "Run '$0 list' to see available targets." >&2
+    fi
+}
+
 main() {
     local target="$1"
 
-    if [ -z "${target}" ]; then
-        echo "Usage: $0 <target>|llvm" >&2
-        echo "Available targets can be found in ${TARGETS_DIR}/" >&2
+    case "${target}" in
+        ""|-h|--help|help)
+            usage
+            [ -z "${target}" ] && exit 1 || exit 0
+            ;;
+        list)
+            list_targets
+            exit 0
+            ;;
+    esac
+
+    if [ "${target}" != "llvm" ] && [ ! -f "${TARGETS_DIR}/${target}/config" ]; then
+        suggest_targets "${target}"
         exit 1
     fi
 

@@ -38,7 +38,7 @@ name: Release
         type: string
         default: ''
 concurrency:
-  group: '${{ github.workflow }}-${{ github.ref }}-${{ github.event.inputs.libc }}'
+  group: '${{ github.workflow }}-${{ github.ref }}-${{ inputs.libc }}'
   cancel-in-progress: true
 permissions:
   contents: read
