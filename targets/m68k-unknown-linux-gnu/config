@@ -1,1 +1,1 @@
-CLANG_ARGS="-target m68k-unknow-linux-gnu"
+CLANG_ARGS=""

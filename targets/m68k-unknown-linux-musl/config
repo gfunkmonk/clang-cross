@@ -1,1 +1,1 @@
-CLANG_ARGS="-target m68k-unknow-linux-musl"
+CLANG_ARGS=""
