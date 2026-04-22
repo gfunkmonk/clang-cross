@@ -139,7 +139,7 @@ build_target() {
 	fi
 
 	# Cleanup trap: ensure directory is writable before rm -rf
-	trap 'chmod -R +w "${TARGET}" 2>/dev/null || true; rm -rf "${TARGET}"' EXIT
+	trap 'sudo chmod -R +w "${TARGET}" 2>/dev/null || true; sudo rm -rf "${TARGET}"' EXIT
 
 	if [ ! -f "clang-cross.tar.xz" ]; then
               echo "ERROR: clang-cross.tar.xz not found. Run build_llvm first." >&2
@@ -232,9 +232,10 @@ build_target() {
         done
 
         # Final cleanup and packaging
-        sudo find /opt/clang-cross ! -type l -exec chmod -w {} + || true			
-        chmod -R +w "${TARGET}" 2>/dev/null || true
-        rm -rf "${TARGET}"
+        sudo find /opt/clang-cross ! -type l -exec chmod -w {} + || true
+        echo "==> Cleaning up build directory ${TARGET}..."
+        sudo chmod -R +w "${TARGET}" 2>/dev/null || true
+        sudo rm -rf "${TARGET}"
         sudo mv /opt/clang-cross "${TARGET}"
         sudo chown -R root:root "${TARGET}"
         env XZ_OPT="-T0" sudo tar -cJvf "${TARGET}.tar.xz" "${TARGET}"
