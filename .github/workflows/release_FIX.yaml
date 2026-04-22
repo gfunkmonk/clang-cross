@@ -14,7 +14,7 @@ name: Release FIX
         type: boolean
         default: false
       swapspace:
-        description: Add Swap ̳Space
+        description: Add Swap Space
         required: true
         type: boolean
         default: false
@@ -225,7 +225,7 @@ jobs:
           retention-days: 1
   release:
     name: Release
-    runs-on: ubuntu-slim
+    runs-on: ubuntu-24.04
     needs:
       - build-targets
     if: |
