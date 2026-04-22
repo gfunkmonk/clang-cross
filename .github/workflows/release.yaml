@@ -210,7 +210,7 @@ jobs:
             ${{ matrix.target }}.tar.xz
             ${{ matrix.target }}.tar.xz.sha256
           key: 'target-${{ matrix.target }}-${{ steps.llvm-hash.outputs.hash }}'
-      - name: Build Target
+      - name: Build el Target
         if: steps.cache-target.outputs.cache-hit != 'true'
         run: |
           sudo rm -rf /opt/clang-cross
@@ -295,7 +295,7 @@ jobs:
             ${{ matrix.target }}.tar.xz
             ${{ matrix.target }}.tar.xz.sha256
           key: 'target-${{ matrix.target }}-${{ steps.llvm-hash.outputs.hash }}'
-      - name: Build Target
+      - name: Build el Target
         if: steps.cache-target.outputs.cache-hit != 'true'
         run: |
           sudo rm -rf /opt/clang-cross
@@ -317,7 +317,7 @@ jobs:
           retention-days: 1
   release:
     name: Release
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-slim
     needs:
       - build-gnu-targets
       - build-musl-targets
