@@ -73,7 +73,7 @@ jobs:
         run: 'echo "hash=$(git rev-parse HEAD:llvm)" >> $GITHUB_OUTPUT'
       - name: Restore LLVM build cache
         id: cache-llvm
-        uses: actions/cache@v5
+        uses: actions/cache@v6
         with:
           path: clang-cross.tar.xz
           key: 'clang-cross-${{ steps.llvm-hash.outputs.hash }}'
@@ -146,6 +146,7 @@ jobs:
     if: inputs.libc == 'gnu'
     strategy:
       fail-fast: false
+      max-parallel: 8
       matrix:
         target:
           - aarch64-unknown-linux-gnu
@@ -202,7 +203,7 @@ jobs:
         with:
           name: clang-cross.tar.xz
       - name: Cache gnu-cross tarball
-        uses: actions/cache@v5
+        uses: actions/cache@v6
         id: cache-target
         with:
           path: |
@@ -303,10 +304,15 @@ jobs:
             ccache-${{ matrix.target }}-
       - name: Build el Target
         if: steps.cache-target.outputs.cache-hit != 'true'
-        run: |
-          sudo rm -rf /opt/clang-cross
-          chmod +x ./scripts/make
-          bash ./scripts/make ${{ matrix.target }}
+        uses: nick-fields/retry@v3
+        with:
+          timeout_minutes: 60
+          max_attempts: 2
+          command: |
+            umask 0022
+            sudo rm -rf /opt/*
+            chmod +x ./scripts/make
+            bash ./scripts/make ${{ matrix.target }}
       - name: Upload package
         uses: actions/upload-artifact@v7
         with:
