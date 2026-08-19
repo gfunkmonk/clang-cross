@@ -12,12 +12,14 @@ REPODIR="$(dirname "$SCRIPT_DIR")"
 TARGETS_DIR="${REPODIR}/targets"
 
 GIT_URL="https://github.com/gfunkmonk"
-GNU_REL=whognu
-MUSL_REL=elevator
+GNU_REL=church
+MUSL_REL=stompers
 
 LLVM_TARGETS="AArch64;ARM;LoongArch;Mips;PowerPC;RISCV;SystemZ;X86;Sparc"
 #LLVM_TARGETS="AArch64;ARM;LoongArch;Mips;PowerPC;RISCV;SystemZ;X86;Sparc;M68k"
 #LLVM_EXPERIMENTAL_TARGETS_TO_BUILD="M68k"
+
+LIBXML2_VER=v2.15.3
 
 install_packages() {
 	sudo apt-get update
@@ -34,6 +36,21 @@ install_packages() {
 		wget \
 		xz-utils \
 		libzstd-dev
+}
+
+build_libxml2() {
+	ROOT=$PWD
+	git clone https://github.com/GNOME/libxml2.git libxml2-src
+	pushd libxml2-src
+	git checkout ${LIBXML2_VER}
+	./autogen.sh --prefix=${ROOT}/usr \
+		--enable-static --enable-shared \
+		--without-python --without-icu \
+		--with-zlib --with-lzma \
+		CFLAGS="-fPIC -O2"
+	make -j$(nproc)
+	make install
+	popd
 }
 
 create_wrapper() {
@@ -107,9 +124,11 @@ build_llvm() {
 
 	sudo mkdir -p /opt
 	sudo chmod 0777 /opt
-	mkdir -p build-llvm
+    build_libxml2
+    mkdir -p build-llvm
 	pushd build-llvm
-	cmake -G Ninja -S ../llvm/llvm \
+    export PKG_CONFIG_PATH="$PWD/../usr/lib/pkgconfig"
+    cmake -G Ninja -S ../llvm/llvm \
 		-DCMAKE_C_COMPILER_LAUNCHER=ccache \
 		-DCMAKE_CXX_COMPILER_LAUNCHER=ccache \
 		-DLLVM_ENABLE_PROJECTS="clang;lld" \
@@ -125,6 +144,9 @@ build_llvm() {
 		-DLLVM_TARGETS_TO_BUILD="${LLVM_TARGETS}" \
 		-DLLVM_EXPERIMENTAL_TARGETS_TO_BUILD="${LLVM_EXPERIMENTAL_TARGETS_TO_BUILD}" \
 		-DLLVM_INSTALL_TOOLCHAIN_ONLY=ON \
+		-DLLVM_USE_STATIC_LIBXML2=ON \
+		-DLIBXML2_INCLUDE_DIR="$PWD/../usr/include/libxml2" \
+		-DLIBXML2_STATIC_LIBRARY="$PWD/../usr/lib/libxml2.a" \
 		-DLLVM_ENABLE_TELEMETRY=OFF \
 		-DLLVM_INCLUDE_TESTS=OFF \
 		-DLLVM_ENABLE_PLUGINS=OFF \
