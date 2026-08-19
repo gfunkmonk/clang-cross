@@ -6,8 +6,10 @@ umask 0022
 
 # Get the absolute path to the directory where this script lives (e.g., /.../repo/scripts)
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
 # Move up one level to the repository root (e.g., /.../repo)
 REPODIR="$(dirname "$SCRIPT_DIR")"
+
 # Ensure we can find the targets directory relative to the repo root
 TARGETS_DIR="${REPODIR}/targets"
 
