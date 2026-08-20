@@ -161,7 +161,7 @@ build_llvm() {
 		-DLLVM_ENABLE_ASSERTIONS=OFF \
 		-DLLVM_OPTIMIZED_TABLEGEN=ON \
 		-DLLVM_ENABLE_RUNTIMES="compiler-rt;libcxx;libcxxabi;libunwind"
-	ninja j$(nproc) install/strip
+	ninja -j$(nproc) install/strip
 	popd
 
 	# Check if install succeeded before wiping
@@ -201,6 +201,9 @@ build_target() {
 
 	sudo tar -xf clang-cross.tar.xz -C /opt
 	sudo chown -R "$(id -u):$(id -g)" /opt/clang-cross
+	mv /opt/clang-cross/bin/clang   /opt/clang-cross/bin/clang.real
+	mv /opt/clang-cross/bin/clang++ /opt/clang-cross/bin/clang++.real
+
 	case ${TARGET} in
 		*gnu*)
 			URL="${GIT_URL}/gnu-cross/releases/download/${GNU_REL}/${TARGET}.tar.xz"
