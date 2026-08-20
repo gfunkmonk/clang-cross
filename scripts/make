@@ -4,24 +4,19 @@ set -e
 set -o pipefail
 umask 0022
 
-# Get the absolute path to the directory where this script lives (e.g., /.../repo/scripts)
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-
-# Move up one level to the repository root (e.g., /.../repo)
 REPODIR="$(dirname "$SCRIPT_DIR")"
-
-# Ensure we can find the targets directory relative to the repo root
 TARGETS_DIR="${REPODIR}/targets"
 
 GIT_URL="https://github.com/gfunkmonk"
 GNU_REL=church
 MUSL_REL=stompers
 
+LIBXML2_VER=v2.15.3
+
 LLVM_TARGETS="AArch64;ARM;LoongArch;Mips;PowerPC;RISCV;SystemZ;X86;Sparc"
 #LLVM_TARGETS="AArch64;ARM;LoongArch;Mips;PowerPC;RISCV;SystemZ;X86;Sparc;M68k"
 #LLVM_EXPERIMENTAL_TARGETS_TO_BUILD="M68k"
-
-LIBXML2_VER=v2.15.3
 
 install_packages() {
 	sudo apt-get update
@@ -305,7 +300,7 @@ build_target() {
 
 usage() {
     cat <<USAGE
-Usage: $0 <subcommand>
+Usage: $0 <subcommand>	
 
 Subcommands:
     llvm              Build the base clang-cross toolchain (LLVM/clang/lld).
