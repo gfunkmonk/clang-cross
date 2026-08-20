@@ -2,12 +2,12 @@
 
 $\large{\textbf{\color{#7FFF00}{This is a simple, lightweight project for making cross-compilation toolchain with clang and either GNU or MUSL libc.}}}$  
 
-## Supported targets
-                                                    
-|   $$\huge{\color{purple}MUSL LIBC}$$           |            |           |          |   |   |       $$\huge{\color{blue}GLIBC GNU}$$       |            |           |          |
+#
+                                                  
+|   $$\huge{\color{#DF73FF}MUSL LIBC}$$           |            |           |          |   |   |       $$\huge{\color{#6CB4EE}GLIBC GNU}$$       |            |           |          |
 |:------------------------------:|------------|-----------|----------|---|---|:-----------------------------:|------------|-----------|----------|
 |                                |            |           |          |   |   |                               |            |           |          |
-|            _Target_            | **Kernel** | **Clang** | **Musl** |   |   | _Target_                      | **Kernel** | **Clang** | **Libc** |
+|            **Target**            | **Kernel** | **Clang** | **Musl** |   |   | **Target**                      | **Kernel** | **Clang** | **Libc** |
 |   aarch64-unknown-linux-musl   |   6.18.41  |   22.1.6  |   1.2.6  |   |   | aarch64-unknown-linux-gnu     |            |   22.1.6  |   2.44   |
 |  aarch64_be-unknown-linux-musl |   6.18.41  |   22.1.6  |   1.2.6  |   |   | aarch64_be-unknown-linux-gnu  |   6.18.41  |   22.1.6  |   2.44   |
 |   arm-unknown-linux-musleabi   |   6.18.41  |   22.1.6  |   1.2.6  |   |   | alphaev56-unknown-linux-gnu   |   6.18.41  |   22.1.6  |   2.44   |
