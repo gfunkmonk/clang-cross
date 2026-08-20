@@ -1,10 +1,10 @@
-# clang-cross
+# $\textsf{\color{#f5750e}{clang-cross}}$ 
 
 This is a simple, lightweight project for making cross-compilation toolchain with clang and {gnu, musl} libc.
 
 ## Supported targets
-
-|           **_Musl_**           |            |           |          |   |   |       **_GNU (glibc)_**       |            |           |          |
+                                                    
+|   $${\color{red}MUSL LIBC}$$           |            |           |          |   |   |       $${\color{blue}GLIBC GNU}$$       |            |           |          |
 |:------------------------------:|------------|-----------|----------|---|---|:-----------------------------:|------------|-----------|----------|
 |                                |            |           |          |   |   |                               |            |           |          |
 |            _Target_            | **Kernel** | **Clang** | **Musl** |   |   | _Target_                      | **Kernel** | **Clang** | **Libc** |
