@@ -10,7 +10,7 @@ Run `./scripts/make list` to print the up-to-date set of targets directly from `
 |:------------------------------:|------------|-----------|----------|---|---|:-----------------------------:|------------|-----------|----------|
 |                                |            |           |          |   |   |                               |            |           |          |
 |            **Target**            | **Kernel** | **Clang** | **Musl** |   |   | **Target**                      | **Kernel** | **Clang** | **Libc** |
-|   aarch64-unknown-linux-musl   |   6.18.41  |   22.1.6  |   1.2.6  |   |   | aarch64-unknown-linux-gnu     |            |   22.1.6  |   2.44   |
+|   aarch64-unknown-linux-musl   |   6.18.41  |   22.1.6  |   1.2.6  |   |   | aarch64-unknown-linux-gnu     |   6.18.41  |   22.1.6  |   2.44   |
 |  aarch64_be-unknown-linux-musl |   6.18.41  |   22.1.6  |   1.2.6  |   |   | aarch64_be-unknown-linux-gnu  |   6.18.41  |   22.1.6  |   2.44   |
 |   arm-unknown-linux-musleabi   |   6.18.41  |   22.1.6  |   1.2.6  |   |   | alphaev56-unknown-linux-gnu   |   6.18.41  |   22.1.6  |   2.44   |
 |  arm-unknown-linux-musleabihf  |   6.18.41  |   22.1.6  |   1.2.6  |   |   | alphaev67-unknown-linux-gnu   |   6.18.41  |   22.1.6  |   2.44   |
