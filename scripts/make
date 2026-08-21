@@ -244,8 +244,7 @@ build_target() {
 		    cp -a "${TARGET}/." /opt/clang-cross/
 
 		    # Copy real GCC binaries to bin/ (the cp -a above already does this,
-		    # but be explicit so the paths are definitely 
-real files, not symlinks)
+		    # but be explicit so the paths are definitely real files, not symlinks)
 		    for n in gcc g++ cpp ar nm objcopy objdump ranlib strip; do
 		        if [ -f "${TARGET}/bin/${TARGET}-${n}" ]; then
           		  cp -af "${TARGET}/bin/${TARGET}-${n}" "/opt/clang-cross/bin/${TARGET}-${n}"
