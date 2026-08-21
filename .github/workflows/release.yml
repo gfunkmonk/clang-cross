@@ -1,4 +1,4 @@
-name: Release FIX
+name: Release
 'on':
   workflow_dispatch:
     inputs:
@@ -31,23 +31,21 @@ name: Release FIX
         default: false
       make_release:
         description: GitHub Release?
-        type: choice
-        required: true
-        options: [no, yes]
-        default: no
+        type: boolean
+        default: false
       release_name:
         description: Release name?
         type: string
         default: ''
 concurrency:
-  group: '${{ github.workflow }}-${{ github.ref }}-${{ github.event.inputs.libc }}'
+  group: '${{ github.workflow }}-${{ github.ref }}-${{ inputs.libc }}'
   cancel-in-progress: true
 permissions:
   contents: read
 jobs:
   build-llvm:
     name: Build LLVM
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     steps:
       - if: '${{ inputs.freespace }}'
         name: Free Up Disk Space
@@ -84,13 +82,13 @@ jobs:
         run: |
           DEBIAN_FRONTEND=noninteractive sudo apt-get -y update
 
-          DEBIAN_FRONTEND=noninteractive sudo apt-get -y install apt-utils ccache ca-certificates gpg wget
+          DEBIAN_FRONTEND=noninteractive sudo apt-get -y install apt-utils ccache ca-certificates gpg wget zstd
 
           cat >> $GITHUB_ENV << 'EOF'
           CCACHE_SLOPPINESS=locale,time_macros,random_seed,file_macro,include_file_mtime,include_file_ctime,file_stat_matches,pch_defines,clang_index_store,include_file_ctime,ivfsoverlay,modules,system_headers
           CCACHE_NOHASHDIR=true
           CCACHE_COMPRESS=true
-          CCACHE_COMPRESSLEVEL=17
+          CCACHE_COMPRESSLEVEL=18
           CCACHE_NOFILECLONE=true
           CCACHE_NOHARDLINK=true
           CCACHE_INODECACHE=true
@@ -123,7 +121,7 @@ jobs:
       - name: Enable Kitware Repository
         run: |
           test -f /usr/share/doc/kitware-archive-keyring/copyright || wget -O - https://apt.kitware.com/keys/kitware-archive-latest.asc 2>/dev/null | gpg --dearmor - | sudo tee /usr/share/keyrings/kitware-archive-keyring.gpg >/dev/null
-          echo 'deb [signed-by=/usr/share/keyrings/kitware-archive-keyring.gpg] https://apt.kitware.com/ubuntu/ noble main' | sudo tee /etc/apt/sources.list.d/kitware.list >/dev/null
+          echo 'deb [signed-by=/usr/share/keyrings/kitware-archive-keyring.gpg] https://apt.kitware.com/ubuntu/ resolute main' | sudo tee /etc/apt/sources.list.d/kitware.list >/dev/null
       - if: '${{ inputs.sshserver }}'
         name: SSH Server-ing
         uses: valeriangalliat/action-sshd-cloudflared@v4
@@ -141,47 +139,140 @@ jobs:
           path: clang-cross.tar.xz
           if-no-files-found: error
           retention-days: 1
-  build-targets:
-    name: Build Targets
+  build-gnu-targets:
+    name: Build GNU Targets
     runs-on: ubuntu-24.04
     needs: build-llvm
+    if: inputs.libc == 'gnu'
     strategy:
       fail-fast: false
       matrix:
         target:
-          #- aarch64-unknown-linux-${{ github.event.inputs.libc }}
-          #- aarch64_be-unknown-linux-${{ github.event.inputs.libc }}
-          #- arm-unknown-linux-${{ github.event.inputs.libc }}eabi
-          #- arm-unknown-linux-${{ github.event.inputs.libc }}eabihf
-          #- armv5-unknown-linux-${{ github.event.inputs.libc }}eabi
-          #- armv6-unknown-linux-${{ github.event.inputs.libc }}eabi
-          #- armv6-unknown-linux-${{ github.event.inputs.libc }}eabihf
-          #- armv7-unknown-linux-${{ github.event.inputs.libc }}eabi
-          #- armv7-unknown-linux-${{ github.event.inputs.libc }}eabihf
-          #- i386-unknown-linux-${{ github.event.inputs.libc }}
-          #- i486-unknown-linux-${{ github.event.inputs.libc }}
-          #- i586-unknown-linux-${{ github.event.inputs.libc }}
-          #- i686-unknown-linux-${{ github.event.inputs.libc }}
-          #- loongarch64-unknown-linux-${{ github.event.inputs.libc }}
-          #- mips64el-unknown-linux-${{ github.event.inputs.libc }}
-          #- mips64-unknown-linux-${{ github.event.inputs.libc }}
-          #- mipsel-unknown-linux-${{ github.event.inputs.libc }}
-          #- mipsel-unknown-linux-${{ github.event.inputs.libc }}sf
-          #- mips-unknown-linux-${{ github.event.inputs.libc }}
-          #- mips-unknown-linux-${{ github.event.inputs.libc }}sf
-          - m68k-unknown-linux-${{ github.event.inputs.libc }}
-          #- or1k-unknown-linux-${{ github.event.inputs.libc }}
-          #- powerpc64le-unknown-linux-${{ github.event.inputs.libc }}
-          #- powerpc64-unknown-linux-${{ github.event.inputs.libc }}
-          #- powerpcle-unknown-linux-${{ github.event.inputs.libc }}
-          #- powerpcle-unknown-linux-${{ github.event.inputs.libc }}sf
-          #- powerpc-unknown-linux-${{ github.event.inputs.libc }}
-          #- powerpc-unknown-linux-${{ github.event.inputs.libc }}sf
-          #- riscv32-unknown-linux-${{ github.event.inputs.libc }}
-          #- riscv64-unknown-linux-${{ github.event.inputs.libc }}
-          #- s390x-ibm-linux-${{ github.event.inputs.libc }}
-          #- sh4-multilib-linux-${{ github.event.inputs.libc }}
-          #- x86_64-unknown-linux-${{ github.event.inputs.libc }}
+          - aarch64-unknown-linux-gnu
+          - aarch64_be-unknown-linux-gnu
+          - alphaev56-unknown-linux-gnu
+          - alphaev67-unknown-linux-gnu
+          - arm-unknown-linux-gnueabi
+          - arm-unknown-linux-gnueabihf
+          - armv4t-unknown-linux-gnueabi
+          - armv5-unknown-linux-gnueabi
+          - armv6-unknown-linux-gnueabi
+          - armv6-unknown-linux-gnueabihf
+          - armv7-unknown-linux-gnueabi
+          - armv7-unknown-linux-gnueabihf
+          - hppa-unknown-linux-gnu
+          - i486-unknown-linux-gnu
+          - i586-unknown-linux-gnu
+          - i686-unknown-linux-gnu
+          - loongarch64-unknown-linux-gnu
+          - m68k-unknown-linux-gnu
+          - microblaze-xilinx-linux-gnu
+          - microblazeel-xilinx-linux-gnu
+          - mips-unknown-linux-gnu
+          - mips-unknown-linux-gnusf
+          - mips64-unknown-linux-gnu
+          - mips64el-unknown-linux-gnu
+          - mipsel-unknown-linux-gnu
+          - mipsel-unknown-linux-gnusf
+          - or1k-unknown-linux-gnu
+          - powerpc-unknown-linux-gnu
+          - powerpc-unknown-linux-gnusf
+          - powerpc64-unknown-linux-gnu
+          - powerpc64le-unknown-linux-gnu
+          - powerpcle-unknown-linux-gnu
+          - powerpcle-unknown-linux-gnusf
+          - riscv32-unknown-linux-gnu
+          - riscv64-unknown-linux-gnu
+          - s390x-ibm-linux-gnu
+          - sh4-multilib-linux-gnu
+          - sparc-unknown-linux-gnu
+          - sparc64-unknown-linux-gnu
+          - x86_64-unknown-linux-gnu
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 1
+          submodules: true
+      - name: Get LLVM hash
+        id: llvm-hash
+        run: 'echo "hash=$(git rev-parse HEAD:llvm)" >> $GITHUB_OUTPUT'
+      - name: Download
+        uses: actions/download-artifact@v8
+        with:
+          name: clang-cross.tar.xz
+      - name: Cache gnu-cross tarball
+        uses: actions/cache@v5
+        id: cache-target
+        with:
+          path: |
+            ${{ matrix.target }}.tar.xz
+            ${{ matrix.target }}.tar.xz.sha256
+          key: 'target-${{ matrix.target }}-${{ steps.llvm-hash.outputs.hash }}'
+      - name: Build el Target
+        if: steps.cache-target.outputs.cache-hit != 'true'
+        run: |
+          sudo rm -rf /opt/clang-cross
+          chmod +x ./scripts/make
+          bash ./scripts/make ${{ matrix.target }}
+      - name: Upload package
+        uses: actions/upload-artifact@v7
+        with:
+          name: '${{ matrix.target }}.tar.xz'
+          path: '${{ matrix.target }}.tar.xz'
+          if-no-files-found: error
+          retention-days: 1
+      - name: Upload checksum
+        uses: actions/upload-artifact@v7
+        with:
+          name: '${{ matrix.target }}.tar.xz.sha256'
+          path: '${{ matrix.target }}.tar.xz.sha256'
+          if-no-files-found: error
+          retention-days: 1
+  build-musl-targets:
+    name: Build MUSL Targets
+    runs-on: ubuntu-24.04
+    needs: build-llvm
+    if: inputs.libc == 'musl'
+    strategy:
+      fail-fast: false
+      matrix:
+        target:
+          - aarch64-unknown-linux-musl
+          - aarch64_be-unknown-linux-musl
+          - arm-unknown-linux-musleabi
+          - arm-unknown-linux-musleabihf
+          - armv5-unknown-linux-musleabi
+          - armv6-unknown-linux-musleabi
+          - armv6-unknown-linux-musleabihf
+          - armv7-unknown-linux-musleabi
+          - armv7-unknown-linux-musleabihf
+          - i386-unknown-linux-musl
+          - i486-unknown-linux-musl
+          - i586-unknown-linux-musl
+          - i686-unknown-linux-musl
+          - loongarch64-unknown-linux-musl
+          - m68k-unknown-linux-musl
+          - microblaze-xilinx-linux-musl
+          - microblazeel-xilinx-linux-musl
+          - mips-unknown-linux-musl
+          - mips-unknown-linux-muslsf
+          - mips64-unknown-linux-musl
+          - mips64el-unknown-linux-musl
+          - mipsel-unknown-linux-musl
+          - mipsel-unknown-linux-muslsf
+          - or1k-unknown-linux-musl
+          - powerpc-unknown-linux-musl
+          - powerpc-unknown-linux-muslsf
+          - powerpc64-unknown-linux-musl
+          - powerpc64le-unknown-linux-musl
+          - powerpcle-unknown-linux-musl
+          - powerpcle-unknown-linux-muslsf
+          - riscv32-unknown-linux-musl
+          - riscv64-unknown-linux-musl
+          - s390x-ibm-linux-musl
+          - sh4-multilib-linux-musl
+          - x86_64-unknown-linux-musl
     steps:
       - name: Checkout
         uses: actions/checkout@v6
@@ -227,16 +318,17 @@ jobs:
     name: Release
     runs-on: ubuntu-slim
     needs:
-      - build-targets
+      - build-gnu-targets
+      - build-musl-targets
     if: |
-      !cancelled() && github.event.inputs.make_release == 'yes'
+      !cancelled() && inputs.make_release
     permissions:
       contents: write
     steps:
-      #- name: Checkout
-      #  uses: actions/checkout@v6
-      #  with:
-      #    fetch-depth: 1
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 1
       - name: Download artifacts
         uses: actions/download-artifact@v8
         with:
@@ -250,8 +342,7 @@ jobs:
           for i in release/*.sha256; do
             echo "| $(basename $i .sha256) | $(cat $i) |" >> RELEASE.md
           done
-      #- if: '${{ inputs.release_name != '''' && inputs.make_release }}'
-      - if: '${{ inputs.release_name != '''' && inputs.make_release == ''yes'' }}'
+      - if: '${{ inputs.release_name != '''' && inputs.make_release }}'
         name: Create Release
         uses: xiechangan123/action-gh-release@master
         with:
@@ -259,12 +350,11 @@ jobs:
           tag_name: '${{ inputs.release_name }}'
           prerelease: false
           draft: false
-          overwrite: true
           generate_release_notes: false
           make_latest: true
           files: release/*-*-*.tar.*
           body_path: RELEASE.md
-      - if: '${{ inputs.release_name != '''' && inputs.make_release == ''yes'' }}'
+      - if: '${{ inputs.release_name != '''' && inputs.make_release }}'
         name: Finalize Release
         env:
           GH_TOKEN: '${{ secrets.GITHUB_TOKEN }}'
