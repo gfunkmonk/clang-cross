@@ -45,7 +45,7 @@ permissions:
 jobs:
   build-llvm:
     name: Build LLVM
-    runs-on: ubuntu-26.04
+    runs-on: ubuntu-24.04
     steps:
       - if: '${{ inputs.freespace }}'
         name: Free Up Disk Space
@@ -73,7 +73,7 @@ jobs:
         run: 'echo "hash=$(git rev-parse HEAD:llvm)" >> $GITHUB_OUTPUT'
       - name: Restore LLVM build cache
         id: cache-llvm
-        uses: actions/cache@v5
+        uses: actions/cache@v6
         with:
           path: clang-cross.tar.xz
           key: 'clang-cross-${{ steps.llvm-hash.outputs.hash }}'
@@ -202,7 +202,7 @@ jobs:
         with:
           name: clang-cross.tar.xz
       - name: Cache gnu-cross tarball
-        uses: actions/cache@v5
+        uses: actions/cache@v6
         id: cache-target
         with:
           path: |
@@ -287,13 +287,27 @@ jobs:
         with:
           name: clang-cross.tar.xz
       - name: Cache musl-cross tarball
-        uses: actions/cache@v5
+        uses: actions/cache@v6
         id: cache-target
         with:
           path: |
             ${{ matrix.target }}.tar.xz
             ${{ matrix.target }}.tar.xz.sha256
           key: 'target-${{ matrix.target }}-${{ steps.llvm-hash.outputs.hash }}'
+      - name: CCACHE Cache
+        uses: actions/cache@v6
+        with:
+          path: /mnt/ccache
+          key: ccache-${{ matrix.target }}-${{ github.run_id }}
+          restore-keys: |
+            ccache-${{ matrix.target }}-
+      - name: CCACHE Cache
+        uses: actions/cache@v6
+        with:
+          path: /mnt/ccache
+          key: ccache-${{ matrix.target }}-${{ github.run_id }}
+          restore-keys: |
+            ccache-${{ matrix.target }}-
       - name: Build el Target
         if: steps.cache-target.outputs.cache-hit != 'true'
         run: |
