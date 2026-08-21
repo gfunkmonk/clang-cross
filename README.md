@@ -1,4 +1,4 @@
-# $\Huge{\color{#f5750e}{clang-cross}}$       [![Release](https://github.com/gfunkmonk/clang-cross/actions/workflows/release.yaml/badge.svg?branch=main)](https://github.com/gfunkmonk/clang-cross/actions/workflows/release.yaml)
+# $\Huge{\color{#f5750e}{clang-cross}}$       [![Release](https://github.com/gfunkmonk/clang-cross/actions/workflows/release.yml/badge.svg)](https://github.com/gfunkmonk/clang-cross/actions/workflows/release.yml)
 
 $\large{\textbf{\color{#7FFF00}{This is a simple, lightweight project for making cross-compilation toolchain with clang and either GNU or MUSL libc.}}}$  
 
