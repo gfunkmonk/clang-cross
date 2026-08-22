@@ -14,8 +14,8 @@ MUSL_REL=emotion
 
 LIBXML2_VER=v2.15.3
 
-LLVM_TARGETS="AArch64;ARM;LoongArch;Mips;PowerPC;RISCV;SystemZ;X86;Sparc"
-#LLVM_TARGETS="AArch64;ARM;LoongArch;Mips;PowerPC;RISCV;SystemZ;X86;Sparc;M68k"
+#LLVM_TARGETS="AArch64;ARM;LoongArch;Mips;PowerPC;RISCV;SystemZ;X86;Sparc"
+LLVM_TARGETS="AArch64;ARM;LoongArch;Mips;PowerPC;RISCV;SystemZ;X86;Sparc;M68k"
 #LLVM_EXPERIMENTAL_TARGETS_TO_BUILD="M68k"
 
 install_packages() {
@@ -239,7 +239,8 @@ build_target() {
 
     # For targets with no LLVM backend, install GCC binaries instead of clang wrappers
     case ${TARGET} in
-	      sh4-*|or1k-*|m68k-*|microblaze-*|microblazeel-*)
+	      #sh4-*|or1k-*|m68k-*|microblaze-*|microblazeel-*)
+	      sh4-*|or1k-*|microblaze-*|microblazeel-*)
                         echo "==> Architecture ${TARGET} using robust GCC fallback..."
 
 		    # Copy the whole toolchain tree so cc1/cc1plus stay relative
