@@ -1,4 +1,4 @@
-#!/bin/bash
+k#!/bin/bash
 
 set -e
 set -o pipefail
@@ -19,35 +19,35 @@ LLVM_TARGETS="AArch64;ARM;LoongArch;Mips;PowerPC;RISCV;SystemZ;X86;Sparc"
 #LLVM_EXPERIMENTAL_TARGETS_TO_BUILD="M68k"
 
 install_packages() {
-	sudo apt-get update
-	sudo apt-get install -y --no-install-recommends \
-		build-essential \
-		ca-certificates \
-		ccache \
-		cmake \
-		git \
-		libz-dev \
-		lld \
-		ninja-build \
-		python3 \
-		wget \
-		xz-utils \
-		libzstd-dev
+        sudo apt-get update
+        sudo apt-get install -y --no-install-recommends \
+                build-essential \
+                ca-certificates \
+                ccache \
+                cmake \
+                git \
+                libz-dev \
+                lld \
+                ninja-build \
+                python3 \
+                wget \
+                xz-utils \
+                libzstd-dev
 }
 
 build_libxml2() {
-	ROOT=$PWD
-	git clone https://github.com/GNOME/libxml2.git libxml2-src
-	pushd libxml2-src
-	git checkout ${LIBXML2_VER}
-	./autogen.sh --prefix=${ROOT}/usr \
-		--enable-static --enable-shared \
-		--without-python --without-icu \
-		--with-zlib --with-lzma \
-		CFLAGS="-fPIC -O2"
-	make -j$(nproc)
-	make install
-	popd
+        ROOT=$PWD
+        git clone https://github.com/GNOME/libxml2.git libxml2-src
+        pushd libxml2-src
+        git checkout ${LIBXML2_VER}
+        ./autogen.sh --prefix=${ROOT}/usr \
+                --enable-static --enable-shared \
+                --without-python --without-icu \
+                --with-zlib --with-lzma \
+                CFLAGS="-fPIC -O2"
+        make -j$(nproc)
+        make install
+        popd
 }
 
 create_wrapper() {
@@ -107,11 +107,11 @@ EOF
 }
 
 build_llvm() {
-	# Ensure submodules are actually there
-	if [ ! -f "llvm/llvm/CMakeLists.txt" ]; then
-	    echo "ERROR: LLVM source missing. Run: git submodule update --init --recursive" >&2
-	    exit 1
-	fi
+        # Ensure submodules are actually there
+        if [ ! -f "llvm/llvm/CMakeLists.txt" ]; then
+            echo "ERROR: LLVM source missing. Run: git submodule update --init --recursive" >&2
+            exit 1
+        fi
 
           # SECURITY FIX: Validate sudo access before proceeding
           if ! sudo -n true 2>/dev/null; then
@@ -119,167 +119,164 @@ build_llvm() {
               exit 1
           fi
 
-	sudo mkdir -p /opt
-	sudo chmod 0777 /opt
+        sudo mkdir -p /opt
+        sudo chmod 0777 /opt
     build_libxml2
     mkdir -p build-llvm
-	pushd build-llvm
+        pushd build-llvm
     export PKG_CONFIG_PATH="$PWD/../usr/lib/pkgconfig"
     cmake -G Ninja -S ../llvm/llvm \
-		-DCMAKE_C_COMPILER_LAUNCHER=ccache \
-		-DCMAKE_CXX_COMPILER_LAUNCHER=ccache \
-		-DLLVM_ENABLE_PROJECTS="clang;lld" \
-		-DCMAKE_BUILD_TYPE=Release \
-		-DCMAKE_INSTALL_PREFIX=/opt/clang-cross \
-		-DCLANG_DEFAULT_LINKER=lld \
-		-DCLANG_DEFAULT_PIE_ON_LINUX=ON \
-		-DCLANG_LINK_CLANG_DYLIB=ON \
-		-DENABLE_LINKER_BUILD_ID=ON \
-		-DLLVM_ENABLE_RTTI=ON \
-		-DLLVM_ENABLE_ZLIB=ON \
-		-DLLVM_LINK_LLVM_DYLIB=ON \
-		-DLLVM_TARGETS_TO_BUILD="${LLVM_TARGETS}" \
-		-DLLVM_EXPERIMENTAL_TARGETS_TO_BUILD="${LLVM_EXPERIMENTAL_TARGETS_TO_BUILD}" \
-		-DLLVM_INSTALL_TOOLCHAIN_ONLY=ON \
-		-DLLVM_USE_STATIC_LIBXML2=ON \
-		-DLIBXML2_INCLUDE_DIR="$PWD/../usr/include/libxml2" \
-		-DLIBXML2_STATIC_LIBRARY="$PWD/../usr/lib/libxml2.a" \
-		-DLLVM_ENABLE_TELEMETRY=OFF \
-		-DLLVM_INCLUDE_TESTS=OFF \
-		-DLLVM_ENABLE_PLUGINS=OFF \
-		-DLLVM_ENABLE_OCAMLDOC=OFF \
-		-DLLVM_ENABLE_BINDINGS=OFF \
-		-DLLVM_ENABLE_LIBXML2=OFF \
-		-DCLANG_ENABLE_CIR=OFF \
-		-DLLVM_USE_SPLIT_DWARF=ON \
-		-DLLVM_PARALLEL_LINK_JOBS=1 \
-		-DLLVM_ENABLE_ASSERTIONS=OFF \
-		-DLLVM_OPTIMIZED_TABLEGEN=ON \
-		-DLLVM_ENABLE_RUNTIMES="compiler-rt;libcxx;libcxxabi;libunwind"
-	ninja -j$(nproc) install/strip
-	popd
+                -DCMAKE_C_COMPILER_LAUNCHER=ccache \
+                -DCMAKE_CXX_COMPILER_LAUNCHER=ccache \
+                -DLLVM_ENABLE_PROJECTS="clang;lld" \
+                -DCMAKE_BUILD_TYPE=Release \
+                -DCMAKE_INSTALL_PREFIX=/opt/clang-cross \
+                -DCLANG_DEFAULT_LINKER=lld \
+                -DCLANG_DEFAULT_PIE_ON_LINUX=ON \
+                -DCLANG_LINK_CLANG_DYLIB=ON \
+                -DENABLE_LINKER_BUILD_ID=ON \
+                -DLLVM_ENABLE_RTTI=ON \
+                -DLLVM_ENABLE_ZLIB=ON \
+                -DLLVM_LINK_LLVM_DYLIB=ON \
+                -DLLVM_TARGETS_TO_BUILD="${LLVM_TARGETS}" \
+                -DLLVM_EXPERIMENTAL_TARGETS_TO_BUILD="${LLVM_EXPERIMENTAL_TARGETS_TO_BUILD}" \
+                -DLLVM_INSTALL_TOOLCHAIN_ONLY=ON \
+                -DLLVM_USE_STATIC_LIBXML2=ON \
+                -DLIBXML2_INCLUDE_DIR="$PWD/../usr/include/libxml2" \
+                -DLIBXML2_STATIC_LIBRARY="$PWD/../usr/lib/libxml2.a" \
+                -DLLVM_ENABLE_TELEMETRY=OFF \
+                -DLLVM_INCLUDE_TESTS=OFF \
+                -DLLVM_ENABLE_PLUGINS=OFF \
+                -DLLVM_ENABLE_OCAMLDOC=OFF \
+                -DLLVM_ENABLE_BINDINGS=OFF \
+                -DLLVM_ENABLE_LIBXML2=OFF \
+                -DCLANG_ENABLE_CIR=OFF \
+                -DLLVM_USE_SPLIT_DWARF=ON \
+                -DLLVM_PARALLEL_LINK_JOBS=1 \
+                -DLLVM_ENABLE_ASSERTIONS=OFF \
+                -DLLVM_OPTIMIZED_TABLEGEN=ON \
+                -DLLVM_ENABLE_RUNTIMES="compiler-rt;libcxx;libcxxabi;libunwind"
+        ninja -j$(nproc) install/strip
+        popd
 
-	# Check if install succeeded before wiping
-	if [ -d "/opt/clang-cross/bin" ]; then
-		rm -rf build-llvm
-	fi
+        # Check if install succeeded before wiping
+        if [ -d "/opt/clang-cross/bin" ]; then
+                rm -rf build-llvm
+        fi
 
-	sudo mv /opt/clang-cross .
-	sudo chown -R root:root clang-cross
-	sudo tar -cJvf clang-cross.tar.xz clang-cross
+        sudo mv /opt/clang-cross .
+        sudo chown -R root:root clang-cross
+        sudo tar -cJvf clang-cross.tar.xz clang-cross
 }
 
 build_target() {
-	TARGET="${1}"
+        TARGET="${1}"
           # BUG FIX: Validate target parameter
           if [ -z "${TARGET}" ]; then
               echo "ERROR: Target parameter is required" >&2
               exit 1
           fi
 
-	# Use the variable defined at the top of the script
-	if [ -f "${TARGETS_DIR}/${TARGET}/config" ]; then
-		# shellcheck disable=SC1090
-		. "${TARGETS_DIR}/${TARGET}/config"
-	else
-		echo "ERROR: Configuration for ${TARGET} not found in ${TARGETS_DIR}" >&2
-		exit 1
-	fi
+        # Use the variable defined at the top of the script
+        if [ -f "${TARGETS_DIR}/${TARGET}/config" ]; then
+                # shellcheck disable=SC1090
+                . "${TARGETS_DIR}/${TARGET}/config"
+        else
+                echo "ERROR: Configuration for ${TARGET} not found in ${TARGETS_DIR}" >&2
+                exit 1
+        fi
 
-	# Cleanup trap: ensure directory is writable before rm -rf
-	trap 'sudo chmod -R +w "${TARGET}" 2>/dev/null || true; sudo rm -rf "${TARGET}"' EXIT
+        # Cleanup trap: ensure directory is writable before rm -rf
+        trap 'sudo chmod -R +w "${TARGET}" 2>/dev/null || true; sudo rm -rf "${TARGET}"' EXIT
 
-	if [ ! -f "clang-cross.tar.xz" ]; then
+        if [ ! -f "clang-cross.tar.xz" ]; then
               echo "ERROR: clang-cross.tar.xz not found. Run build_llvm first." >&2
               exit 1
           fi
 
-	sudo tar -xf clang-cross.tar.xz -C /opt
-	sudo chown -R "$(id -u):$(id -g)" /opt/clang-cross
-	mv /opt/clang-cross/bin/clang   /opt/clang-cross/bin/clang.real
-	mv /opt/clang-cross/bin/clang++ /opt/clang-cross/bin/clang++.real
-
-	case ${TARGET} in
-		*gnu*)
-			URL="${GIT_URL}/gnu-cross/releases/download/${GNU_REL}/${TARGET}.tar.xz"
-			;;
-		*musl*)
-			URL="${GIT_URL}/musl-cross/releases/download/${MUSL_REL}/${TARGET}.tar.xz"
-			;;
-	esac
-	downloaded=false
-	for n in $(seq 0 9); do
+        sudo tar -xf clang-cross.tar.xz -C /opt
+        sudo chown -R "$(id -u):$(id -g)" /opt/clang-cross
+        case ${TARGET} in
+                *gnu*)
+                        URL="${GIT_URL}/gnu-cross/releases/download/${GNU_REL}/${TARGET}.tar.xz"
+                        ;;
+                *musl*)
+                        URL="${GIT_URL}/musl-cross/releases/download/${MUSL_REL}/${TARGET}.tar.xz"
+                        ;;
+        esac
+        downloaded=false
+        for n in $(seq 0 9); do
               echo "Download attempt $((n + 1))/10 for ${TARGET}..."
               mkdir -p "${TARGET}" || {
                   echo "ERROR: Failed to create directory ${TARGET}" >&2
                   exit 1
               }
               if wget --retry-connrefused --waitretry=5 --read-timeout=20 --timeout=15 --tries=5 --progress=bar:force -O - "${URL}" 2>/dev/null | tar xJ -C "${TARGET}" --strip-components=1 2>/dev/null; then
-			downloaded=true
-	                    echo "Successfully downloaded ${TARGET}"
-			break
-		fi
+                        downloaded=true
+                            echo "Successfully downloaded ${TARGET}"
+                        break
+                fi
                     echo "Download attempt $((n + 1)) failed, cleaning up..."
-		rm -rf "${TARGET}"
+                rm -rf "${TARGET}"
               if [ "$n" -lt 9 ]; then
                   echo "Waiting 5 seconds before retry..."
                   sleep 5
               fi
-	done
-	if [ "${downloaded}" = "false" ]; then
-		echo "ERROR: Failed to download ${URL} after 10 attempts" >&2
-		exit 1
-	fi
-	find "${TARGET}" ! -type l -exec chmod +w {} +
-	cp -a "${TARGET}/include" /opt/clang-cross/
-	cp -a "${TARGET}/lib/gcc" /opt/clang-cross/lib/
-	cp -a "${TARGET}/${TARGET}" /opt/clang-cross/
-	rm -rf "/opt/clang-cross/lib/gcc/${TARGET}"/*/{install-tools,plugin}
-	rm -rf "/opt/clang-cross/${TARGET}"/{bin,debug-root,lib}
+        done
+        if [ "${downloaded}" = "false" ]; then
+                echo "ERROR: Failed to download ${URL} after 10 attempts" >&2
+                exit 1
+        fi
+        find "${TARGET}" ! -type l -exec chmod +w {} +
+        cp -a "${TARGET}/include" /opt/clang-cross/
+        cp -a "${TARGET}/lib/gcc" /opt/clang-cross/lib/
+        cp -a "${TARGET}/${TARGET}" /opt/clang-cross/
+        rm -rf "/opt/clang-cross/lib/gcc/${TARGET}"/*/{install-tools,plugin}
+        rm -rf "/opt/clang-cross/${TARGET}"/{bin,debug-root,lib}
 
     # For targets with no LLVM backend, install GCC binaries instead of clang wrappers
     case ${TARGET} in
-	      sh4-*|or1k-*|m68k-*|microblaze-*|microblazeel-*)
+              sh4-*|or1k-*|m68k-*|microblaze-*|microblazeel-*)
                         echo "==> Architecture ${TARGET} using robust GCC fallback..."
 
-		    # Copy the whole toolchain tree so cc1/cc1plus stay relative
-		    cp -a "${TARGET}/." /opt/clang-cross/
+                    # Copy the whole toolchain tree so cc1/cc1plus stay relative
+                    cp -a "${TARGET}/." /opt/clang-cross/
 
-		    # Copy real GCC binaries to bin/ (the cp -a above already does this,
-		    # but be explicit so the paths are definitely real files, not symlinks)
-		    for n in gcc g++ cpp ar nm objcopy objdump ranlib strip; do
-		        if [ -f "${TARGET}/bin/${TARGET}-${n}" ]; then
-          		  cp -af "${TARGET}/bin/${TARGET}-${n}" "/opt/clang-cross/bin/${TARGET}-${n}"
-       		        fi
- 		    done
+                    # Copy real GCC binaries to bin/ (the cp -a above already does this,
+                    # but be explicit so the paths are definitely real files, not symlinks)
+                    for n in gcc g++ cpp ar nm objcopy objdump ranlib strip; do
+                        if [ -f "${TARGET}/bin/${TARGET}-${n}" ]; then
+                          cp -af "${TARGET}/bin/${TARGET}-${n}" "/opt/clang-cross/bin/${TARGET}-${n}"
+                        fi
+                    done
 
- 		   # Clang-named wrappers that call GCC, stripping clang-specific flags
- 		   for c in clang:gcc clang++:g++ cpp:cpp; do
- 		       create_wrapper "${TARGET}-${c%%:*}" "${TARGET}-${c##*:}" \
- 		           "--target=*|-target|--sysroot=*|-fcolor-diagnostics" "${CLANG_ARGS}"
-		   done
+                   # Clang-named wrappers that call GCC, stripping clang-specific flags
+                   for c in clang:gcc clang++:g++ cpp:cpp; do
+                       create_wrapper "${TARGET}-${c%%:*}" "${TARGET}-${c##*:}" \
+                           "--target=*|-target|--sysroot=*|-fcolor-diagnostics" "${CLANG_ARGS}"
+                   done
 
-		   # Mask host clang
-    		   ln -sf "${TARGET}-clang"   "/opt/clang-cross/bin/clang"
-	             ln -sf "${TARGET}-clang++" "/opt/clang-cross/bin/clang++"
+                   # Mask host clang
+                   ln -sf "${TARGET}-clang"   "/opt/clang-cross/bin/clang"
+                     ln -sf "${TARGET}-clang++" "/opt/clang-cross/bin/clang++"
 
-		   # Aliases
-		   ln -sf "${TARGET}-clang"   "/opt/clang-cross/bin/${TARGET}-cc"
-    		   ln -sf "${TARGET}-clang++" "/opt/clang-cross/bin/${TARGET}-c++"
-		   ;;
+                   # Aliases
+                   ln -sf "${TARGET}-clang"   "/opt/clang-cross/bin/${TARGET}-cc"
+                   ln -sf "${TARGET}-clang++" "/opt/clang-cross/bin/${TARGET}-c++"
+                   ;;
                 *)
-	             echo "==> Architecture ${TARGET} using standard LLVM/Clang..."
-		   for c in clang:clang.real clang++:clang++.real; do
-            	       create_wrapper "${TARGET}-${c%%:*}" "${c##*:}" "false" \
+                     echo "==> Architecture ${TARGET} using standard LLVM/Clang..."
+                   for c in clang:clang clang++:clang++; do
+                       create_wrapper "${TARGET}-${c%%:*}" "${c##*:}" "false" \
                                "--target=${TARGET} --sysroot=\${BINDIR}/../${TARGET}/sysroot ${CLANG_ARGS}"
                        done
 
                        ln -sf "${TARGET}-clang"   "/opt/clang-cross/bin/clang"
-       		   ln -sf "${TARGET}-clang++" "/opt/clang-cross/bin/clang++"
-	             ln -sf "${TARGET}-clang"   "/opt/clang-cross/bin/${TARGET}-cc"
-	             ln -sf "${TARGET}-clang++" "/opt/clang-cross/bin/${TARGET}-c++"
+                   ln -sf "${TARGET}-clang++" "/opt/clang-cross/bin/clang++"
+                     ln -sf "${TARGET}-clang"   "/opt/clang-cross/bin/${TARGET}-cc"
+                     ln -sf "${TARGET}-clang++" "/opt/clang-cross/bin/${TARGET}-c++"
 
-	             # LLVM tool wrappers only make sense for Clang targets
+                     # LLVM tool wrappers only make sense for Clang targets
                        for n in ar:ar c++filt:cxxfilt nm:nm objcopy:objcopy objdump:objdump \
                                ranlib:ranlib size:size strings:strings strip:strip; do
                            create_wrapper "${TARGET}-${n%%:*}" "llvm-${n##*:}" "false" ""
@@ -300,7 +297,7 @@ build_target() {
 
 usage() {
     cat <<USAGE
-Usage: $0 <subcommand>	
+Usage: $0 <subcommand>
 
 Subcommands:
     llvm              Build the base clang-cross toolchain (LLVM/clang/lld).
