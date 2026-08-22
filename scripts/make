@@ -9,8 +9,8 @@ REPODIR="$(dirname "$SCRIPT_DIR")"
 TARGETS_DIR="${REPODIR}/targets"
 
 GIT_URL="https://github.com/gfunkmonk"
-GNU_REL=church
-MUSL_REL=stompers
+GNU_REL=pizza
+MUSL_REL=emotion
 
 LIBXML2_VER=v2.15.3
 
